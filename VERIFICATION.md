@@ -53,7 +53,7 @@ Reviewed by Tim Gong on 2026-09-21.
 - [x] Inspected generated TypeScript against the lab's three boundary questions: strict typing is used; files follow the designated directory layout; no forbidden dependencies or inline route logic were introduced.
 - [x] Ran the endpoint and confirmed the response.
 - [x] Confirmed the GitHub repository is private.
-- [ ] Submit the repository URL to Canvas.
+- [x] Submitted the repository URL to Canvas.
 
 Follow-ups applied during review:
 

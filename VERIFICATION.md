@@ -21,16 +21,20 @@ The resulting app mounts a route module, which maps the controller to a pure hea
 
 ## Executed checks
 
-| Check                          | Result                                                                               |
-| ------------------------------ | ------------------------------------------------------------------------------------ |
-| Node.js                        | v26.3.0, meets lab minimum                                                           |
-| Required npm                   | 11.19.1 run via npx; system npm remains 11.16.0                                      |
-| Clean installation             | `npx --userconfig=/dev/null --yes npm@11.19.1 ci` passed; 0 reported vulnerabilities |
-| `npm run check`                | TypeScript, ESLint, and Prettier all passed                                          |
-| `npm run build`                | Passed; compiled output in `dist/`                                                   |
-| `npm run dev` + health request | HTTP 200 with expected JSON                                                          |
-| Unknown route                  | HTTP 404                                                                             |
-| `npm start` + health request   | HTTP 200 with expected JSON                                                          |
+| Check                           | Result                                                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Node.js                         | v26.3.0, meets lab minimum                                                                                        |
+| npm                             | 11.19.1 (upgraded from 11.16.0), meets lab minimum                                                                |
+| Clean installation              | `npm ci` passed with the default user configuration; 0 reported vulnerabilities                                   |
+| `npm run check`                 | TypeScript, ESLint, and Prettier all passed                                                                       |
+| `npm run build`                 | Passed; compiled output in `dist/`                                                                                |
+| `npm run dev` + health request  | HTTP 200 with expected JSON                                                                                       |
+| `npm start` + health request    | HTTP 200 with expected JSON                                                                                       |
+| Unknown route, `POST /health`   | HTTP 404, `application/json`, `{"error":"Not found"}`                                                             |
+| `npm run dev` without `.env`    | Starts on default port 3000; health returns HTTP 200                                                              |
+| Invalid `PORT=abc`              | Startup fails with `PORT must be an integer between 1 and 65535`                                                  |
+| Lint rule probes (scratch copy) | Explicit `any`, a floating promise, and a missing return type are each reported as errors                         |
+| Async handler throws            | Terminal error middleware returns HTTP 500 `{"error":"Internal server error"}`; detail is logged server-side only |
 
 Observed response for both development and compiled execution:
 
@@ -41,13 +45,18 @@ Content-Type: application/json; charset=utf-8
 {"status":"ok","service":"campushub-backend"}
 ```
 
-The isolated npm user configuration avoids an incompatible machine-level `allow-scripts` setting. No global npm installation or user configuration was changed. Sandbox network and localhost restrictions required running installation and live HTTP checks with network access enabled.
+## Student review
 
-## Required student review
+Reviewed by Tim Gong on 2026-09-21.
 
-These are agent verification results, not a claim that student review occurred.
+- [x] Read and revised `AGENTS.md`: removed lab-only notes, stated that services are the only layer that calls models, and added file naming, named-export, `/api/v1` mounting, and JSON error-format conventions.
+- [x] Inspected generated TypeScript against the lab's three boundary questions: strict typing is used; files follow the designated directory layout; no forbidden dependencies or inline route logic were introduced.
+- [x] Ran the endpoint and confirmed the response.
+- [x] Confirmed the GitHub repository is private.
+- [ ] Submit the repository URL to Canvas.
 
-- [ ] Personally read and adjust `AGENTS.md` as needed.
-- [ ] Inspect generated TypeScript against the lab's three boundary questions.
-- [ ] Run the endpoint and confirm the response yourself.
-- [ ] Confirm the GitHub repository is private and submit its URL to Canvas.
+Follow-ups applied during review:
+
+- Unknown routes now return a JSON 404 through `src/middleware/not-found.middleware.ts` instead of Express's default HTML page.
+- `dev` and `start` load `.env` only if present.
+- npm was upgraded to the lab's required version, and machine-specific setup notes were removed from `README.md`.

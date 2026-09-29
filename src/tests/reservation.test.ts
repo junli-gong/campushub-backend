@@ -279,8 +279,9 @@ void test('reservation API follows the contract over real HTTP', async (context:
       },
     );
     await context.test(
-      'malformed and oversized JSON return standardized 400',
+      'malformed URLs and JSON, and oversized JSON, return standardized 400',
       async (): Promise<void> => {
+        error(await request('/reservations/user/%ZZ'), 400, 'VALIDATION_ERROR');
         error(
           await request('/reservations', undefined, '{'),
           400,

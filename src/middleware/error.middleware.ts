@@ -18,17 +18,18 @@ export function handleError(
       .json({ code: error.code, message: error.message });
     return;
   }
+  // Body parsing and URL decoding failures carry a 4xx status from Express.
   if (
     error instanceof Error &&
-    'type' in error &&
-    (error.type === 'entity.parse.failed' ||
-      error.type === 'entity.too.large' ||
-      error.type === 'encoding.unsupported' ||
-      error.type === 'charset.unsupported')
+    'status' in error &&
+    typeof error.status === 'number' &&
+    error.status >= 400 &&
+    error.status < 500
   ) {
     response.status(400).json({
       code: 'VALIDATION_ERROR',
-      message: 'Body must be valid application/json within the 100 KB limit.',
+      message:
+        'Request must have a valid URL and valid application/json within the 100 KB limit.',
     });
     return;
   }

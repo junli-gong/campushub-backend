@@ -1,4 +1,4 @@
-import type { Resource, ResourceType } from '../types/reservation';
+import type { Resource } from '../types/reservation';
 
 const resources: readonly Resource[] = [
   {
@@ -31,7 +31,8 @@ const resources: readonly Resource[] = [
   },
 ];
 
-export function listResources(type?: ResourceType): Resource[] {
+// A type that matches no resource yields an empty list rather than an error.
+export function listResources(type?: string): Resource[] {
   return resources
     .filter(
       (resource: Resource): boolean =>

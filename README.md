@@ -32,6 +32,7 @@ Errors use `{ "code": "VALIDATION_ERROR", "message": "..." }`, with `DOUBLE_BOOK
 ```sh
 curl -i http://localhost:3000/api/v1/resources
 curl -i 'http://localhost:3000/api/v1/resources?type=ROOM'
+curl -i 'http://localhost:3000/api/v1/resources?type=STUDY_ROOM'
 curl -i 'http://localhost:3000/api/v1/resources?type='
 
 curl -i -X POST http://localhost:3000/api/v1/reservations \
@@ -45,7 +46,7 @@ The POST returns a generated `id`, the four submitted fields, and `status: "PEND
 
 ### Domain decisions
 
-- The handout's domain enum is `ROOM/EQUIPMENT/LAB`; its `STUDY_ROOM` curl example contradicts that enum. Use `ROOM`. `STUDY_ROOM`, empty values, and repeated type filters return 400.
+- Resource types are `ROOM`, `EQUIPMENT`, and `LAB`. The `type` filter accepts any non-empty string: a value that matches no type, such as `STUDY_ROOM`, returns 200 with an empty array. Empty or repeated `type` values return 400.
 - A separate `CreateReservationRequest` schema contains the four writable fields. The response `Reservation` also contains server-owned `id` and `status`. Extra request fields are rejected.
 - Timestamps must be real calendar dates with uppercase `T`, timezone (`Z` or numeric offset), seconds, and at most three fractional digits. End must be later than start. Offset-equivalent instants are compared correctly.
 - Overlaps use half-open intervals `[startTime, endTime)`; adjacent bookings are allowed. Both PENDING and CONFIRMED block overlaps; CANCELLED does not. Active means PENDING or CONFIRMED, not a comparison with today's date.

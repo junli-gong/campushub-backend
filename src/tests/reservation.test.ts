@@ -103,14 +103,20 @@ void test('reservation API follows the contract over real HTTP', async (context:
       },
     );
     await context.test(
-      'reject empty, unknown, and repeated type values',
+      'unmatched type values return an empty array',
       async (): Promise<void> => {
-        for (const query of [
-          'type=',
-          'type=STUDY_ROOM',
-          'type=room',
-          'type=ROOM&type=LAB',
-        ]) {
+        for (const query of ['type=STUDY_ROOM', 'type=room']) {
+          assert.deepEqual(await request(`/resources?${query}`), {
+            status: 200,
+            body: [],
+          });
+        }
+      },
+    );
+    await context.test(
+      'reject empty and repeated type values',
+      async (): Promise<void> => {
+        for (const query of ['type=', 'type=ROOM&type=LAB']) {
           error(await request(`/resources?${query}`), 400, 'VALIDATION_ERROR');
         }
       },

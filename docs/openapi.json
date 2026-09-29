@@ -51,9 +51,10 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["ROOM", "EQUIPMENT", "LAB"]
+              "minLength": 1
             },
-            "description": "Exactly one non-empty enum value. STUDY_ROOM is not a valid type."
+            "example": "ROOM",
+            "description": "Resource type to match (ROOM, EQUIPMENT, or LAB). A value matching no type, such as STUDY_ROOM, returns an empty array. Empty or repeated values return 400."
           }
         ],
         "responses": {

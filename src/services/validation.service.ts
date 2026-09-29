@@ -1,8 +1,5 @@
 import { DomainError } from '../types/error';
-import type {
-  CreateReservationRequest,
-  ResourceType,
-} from '../types/reservation';
+import type { CreateReservationRequest } from '../types/reservation';
 
 export function validateIdentifier(value: unknown, name: string): string {
   if (
@@ -17,12 +14,12 @@ export function validateIdentifier(value: unknown, name: string): string {
   return value;
 }
 
-export function validateResourceType(value: unknown): ResourceType | undefined {
+export function validateTypeFilter(value: unknown): string | undefined {
   if (value === undefined) return undefined;
-  if (value !== 'ROOM' && value !== 'EQUIPMENT' && value !== 'LAB') {
+  if (typeof value !== 'string' || value.length === 0) {
     throw new DomainError(
       'VALIDATION_ERROR',
-      'type must be a non-empty string: ROOM, EQUIPMENT, or LAB.',
+      'type must be a non-empty string when provided.',
     );
   }
   return value;

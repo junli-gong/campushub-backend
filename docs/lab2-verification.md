@@ -55,7 +55,7 @@ Reviewed by Tim Gong on 2026-09-28.
 
 - [x] Audited the OpenAPI fields, generated interfaces, route paths, and status codes against the contract (answers below).
 - [x] Ran the README curl examples locally, including the handout's `?type=STUDY_ROOM` request.
-- [ ] Submitted the repository URL to the Lab 2 Canvas assignment.
+- [x] Submitted the repository URL to the Lab 2 Canvas assignment.
 
 Part 3 audit questions:
 

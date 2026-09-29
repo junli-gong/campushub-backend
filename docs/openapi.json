@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "CampusHub Reservation API",
-    "version": "2.0.0",
-    "description": "Lab 2 single-process in-memory demonstration. No authentication or production tenant isolation. Data resets on restart. Active means PENDING or CONFIRMED, independent of current date. Intervals are half-open [startTime, endTime); adjacent bookings are allowed."
+    "version": "1.0.0",
+    "description": "API specification for managing campus resources and time-slotted reservations. Active reservations are PENDING or CONFIRMED. Reservation intervals are half-open [startTime, endTime): an overlapping active reservation for the same resource is rejected with 409, and adjacent bookings are allowed. No authentication is applied."
   },
   "servers": [
     {
@@ -28,14 +28,7 @@
             }
           },
           "500": {
-            "description": "Unexpected internal error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -59,7 +52,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Resources",
+            "description": "Resources, filtered by type when provided.",
             "content": {
               "application/json": {
                 "schema": {
@@ -72,24 +65,21 @@
             }
           },
           "400": {
-            "description": "Invalid query, identifier, body, timestamp, time range, missing resource, or unavailable resource.",
+            "description": "The type query parameter is empty or repeated.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "type must be a non-empty string when provided."
                 }
               }
             }
           },
           "500": {
-            "description": "Unexpected internal error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -98,7 +88,7 @@
       "post": {
         "operationId": "createReservation",
         "summary": "Create a PENDING reservation",
-        "description": "Body contains exactly resourceId, userId, startTime, endTime. Server generates id and status. Reject overlapping PENDING/CONFIRMED bookings with 409. Validate timestamps and endTime > startTime. Unknown/unavailable resources return 400. userId is a caller-supplied demo identifier, not authenticated identity.",
+        "description": "The server generates the id and sets status to PENDING. userId is supplied by the caller and is not authenticated.",
         "requestBody": {
           "required": true,
           "content": {
@@ -127,7 +117,7 @@
             }
           },
           "400": {
-            "description": "Invalid query, identifier, body, timestamp, time range, missing resource, or unavailable resource.",
+            "description": "Malformed JSON; missing, extra, or wrong-type fields; an invalid identifier or timestamp; endTime not later than startTime; or an unknown or unavailable resource.",
             "content": {
               "application/json": {
                 "schema": {
@@ -137,24 +127,21 @@
             }
           },
           "409": {
-            "description": "An active reservation overlaps this resource and time interval.",
+            "description": "An active reservation for this resource overlaps the requested interval.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "code": "DOUBLE_BOOKING",
+                  "message": "Resource is already reserved for this time slot."
                 }
               }
             }
           },
           "500": {
-            "description": "Unexpected internal error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -169,16 +156,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-              "minLength": 1,
-              "maxLength": 64
+              "$ref": "#/components/schemas/Identifier"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "PENDING and CONFIRMED reservations; empty array when none exist.",
+            "description": "PENDING and CONFIRMED reservations for the user; an empty array when none exist.",
             "content": {
               "application/json": {
                 "schema": {
@@ -191,7 +175,7 @@
             }
           },
           "400": {
-            "description": "Invalid query, identifier, body, timestamp, time range, missing resource, or unavailable resource.",
+            "description": "userId is not a valid identifier or is not valid percent-encoding.",
             "content": {
               "application/json": {
                 "schema": {
@@ -201,14 +185,7 @@
             }
           },
           "500": {
-            "description": "Unexpected internal error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -216,16 +193,34 @@
   },
   "components": {
     "schemas": {
+      "Identifier": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+        "minLength": 1,
+        "maxLength": 64,
+        "description": "1–64 letters, digits, underscores, or hyphens, starting with a letter or digit."
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$",
+        "description": "ISO 8601 date-time on a real calendar date, with uppercase T, seconds, 0–3 fractional digits, and a Z or ±hh:mm offset."
+      },
+      "ResourceType": {
+        "type": "string",
+        "enum": ["ROOM", "EQUIPMENT", "LAB"]
+      },
+      "ReservationStatus": {
+        "type": "string",
+        "enum": ["PENDING", "CONFIRMED", "CANCELLED"]
+      },
       "User": {
         "type": "object",
         "additionalProperties": false,
         "required": ["id", "name", "email"],
         "properties": {
           "id": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "minLength": 1,
-            "maxLength": 64
+            "$ref": "#/components/schemas/Identifier"
           },
           "name": {
             "type": "string",
@@ -243,18 +238,14 @@
         "required": ["id", "name", "type", "location", "isAvailable"],
         "properties": {
           "id": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "minLength": 1,
-            "maxLength": 64
+            "$ref": "#/components/schemas/Identifier"
           },
           "name": {
             "type": "string",
             "minLength": 1
           },
           "type": {
-            "type": "string",
-            "enum": ["ROOM", "EQUIPMENT", "LAB"]
+            "$ref": "#/components/schemas/ResourceType"
           },
           "location": {
             "type": "string",
@@ -269,30 +260,19 @@
         "type": "object",
         "additionalProperties": false,
         "required": ["resourceId", "userId", "startTime", "endTime"],
+        "description": "Client-writable reservation fields. endTime must be later than startTime.",
         "properties": {
           "resourceId": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "minLength": 1,
-            "maxLength": 64
+            "$ref": "#/components/schemas/Identifier"
           },
           "userId": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "minLength": 1,
-            "maxLength": 64
+            "$ref": "#/components/schemas/Identifier"
           },
           "startTime": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$",
-            "description": "Valid calendar timestamp, uppercase T/Z, required timezone, 0\u20133 fractional second digits. endTime must be later than startTime."
+            "$ref": "#/components/schemas/Timestamp"
           },
           "endTime": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$",
-            "description": "Valid calendar timestamp, uppercase T/Z, required timezone, 0\u20133 fractional second digits. endTime must be later than startTime."
+            "$ref": "#/components/schemas/Timestamp"
           }
         }
       },
@@ -307,40 +287,25 @@
           "endTime",
           "status"
         ],
+        "description": "A stored reservation: the request fields plus the server-generated id and status.",
         "properties": {
           "id": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "minLength": 1,
-            "maxLength": 64
+            "$ref": "#/components/schemas/Identifier"
           },
           "resourceId": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "minLength": 1,
-            "maxLength": 64
+            "$ref": "#/components/schemas/Identifier"
           },
           "userId": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
-            "minLength": 1,
-            "maxLength": 64
+            "$ref": "#/components/schemas/Identifier"
           },
           "startTime": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$",
-            "description": "Valid calendar timestamp, uppercase T/Z, required timezone, 0\u20133 fractional second digits. endTime must be later than startTime."
+            "$ref": "#/components/schemas/Timestamp"
           },
           "endTime": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$",
-            "description": "Valid calendar timestamp, uppercase T/Z, required timezone, 0\u20133 fractional second digits. endTime must be later than startTime."
+            "$ref": "#/components/schemas/Timestamp"
           },
           "status": {
-            "type": "string",
-            "enum": ["PENDING", "CONFIRMED", "CANCELLED"]
+            "$ref": "#/components/schemas/ReservationStatus"
           }
         }
       },
@@ -375,6 +340,22 @@
           "service": {
             "type": "string",
             "enum": ["campushub-backend"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "InternalError": {
+        "description": "Unexpected internal error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "code": "INTERNAL_ERROR",
+              "message": "Internal server error"
+            }
           }
         }
       }

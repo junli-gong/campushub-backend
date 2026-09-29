@@ -81,4 +81,4 @@ src/tests/                  HTTP and model verification
 
 ## Review and submission
 
-[VERIFICATION.md](VERIFICATION.md) preserves Lab 1's historical review. [docs/lab2-verification.md](docs/lab2-verification.md) records Lab 2 checks and contract decisions. Lab 2 still requires the student's personal review and submission of the repository URL to Canvas; prior Lab 1 submission does not submit Lab 2.
+[VERIFICATION.md](VERIFICATION.md) preserves Lab 1's historical review. [docs/lab2-verification.md](docs/lab2-verification.md) records Lab 2 checks, contract decisions, and review.

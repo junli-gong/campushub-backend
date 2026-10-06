@@ -1,6 +1,6 @@
 import { ResourceModel } from '../models/Resource.model';
-import { ReservationModel } from '../models/Reservation.model';
 import type { Resource } from '../types/reservation';
+import { initializeModels } from './persistence.service';
 
 const seedResources: readonly Resource[] = [
   {
@@ -32,10 +32,6 @@ const seedResources: readonly Resource[] = [
     isAvailable: false,
   },
 ];
-
-export async function initializeModels(): Promise<void> {
-  await Promise.all([ResourceModel.init(), ReservationModel.init()]);
-}
 
 export async function seedResourcesIfMissing(): Promise<void> {
   await initializeModels();

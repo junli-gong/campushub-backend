@@ -13,9 +13,8 @@ async function seed(): Promise<void> {
   }
 }
 
-seed().catch((): void => {
-  console.error(
-    'Seeding failed. Check MongoDB availability and configuration.',
-  );
+seed().catch((error: unknown): void => {
+  const reason = error instanceof Error ? error.message : String(error);
+  console.error(`Seeding failed: ${reason}`);
   process.exitCode = 1;
 });

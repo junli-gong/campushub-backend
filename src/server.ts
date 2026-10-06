@@ -51,10 +51,9 @@ async function start(): Promise<void> {
 }
 
 start()
-  .catch(async (): Promise<void> => {
-    console.error(
-      'Startup failed. Check PORT, MONGODB_URI, and MongoDB availability (a replica set is required for bookings).',
-    );
+  .catch(async (error: unknown): Promise<void> => {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(`Startup failed: ${reason}`);
     process.exitCode = 1;
     await disconnectDatabase();
   })

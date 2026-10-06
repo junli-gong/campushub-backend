@@ -75,6 +75,6 @@ Audited manually by Tim Gong on 2026-10-05.
 - [x] Open the routers and app.ts; confirm exact Lab 2 route paths and middleware ordering.
 - [x] Open src/config/, server.ts, and .env-example; verify environment configuration is centralized and the database connects before the listener starts.
 - [x] Personally rerun the README curl examples and understand why the database and seed step are now needed.
-- [ ] Submit the repository URL to the Lab 3 Canvas assignment.
+- [x] Submitted the repository URL to the Lab 3 Canvas assignment.
 
 The handout contains a contradictory sentence about ORM methods being used in controllers. The implementation follows its repeated, explicit boundary: controllers call services, and services own database interactions.

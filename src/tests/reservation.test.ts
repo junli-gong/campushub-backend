@@ -11,7 +11,7 @@ import { handleError } from '../middleware/error.middleware';
 import { app } from '../app';
 import { ResourceModel } from '../models/Resource.model';
 import { ReservationModel } from '../models/Reservation.model';
-import { UserModel } from '../models/user.model';
+import { UserModel } from '../models/User.model';
 import { isTimestamp } from '../services/validation.service';
 
 interface HttpResult {

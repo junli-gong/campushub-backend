@@ -89,8 +89,10 @@ src/scripts/seed.ts          CLI orchestration of the seed service
 src/tests/                   Database and boundary verification
 ```
 
-ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-layer imports from services and models, and `process.env` access outside configuration. Only Express and Mongoose are runtime dependencies. Models have no connections and controllers have no ORM queries. Historical Lab 1/2 verification records remain intact.
+ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-layer imports from services and models, and `process.env` access outside configuration. Only Express and Mongoose are runtime dependencies. Models have no connections and controllers have no ORM queries.
 
-## Lab 3 review and submission
+## Review records
 
-[docs/lab3-verification.md](docs/lab3-verification.md) records executed checks and includes the **NO AI manual audit checklist** required by Part 3. The student must personally inspect the generated files and complete that audit; automated tests do not substitute for it. The repository is private for Lab 3; ensure the instructor has access and submit the repository URL to the Lab 3 Canvas assignment.
+- [VERIFICATION.md](VERIFICATION.md): Lab 1 checks and review.
+- [docs/lab2-verification.md](docs/lab2-verification.md): Lab 2 checks, contract decisions, and review.
+- [docs/lab3-verification.md](docs/lab3-verification.md): Lab 3 checks and the manual layer-isolation audit checklist.

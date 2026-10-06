@@ -10,18 +10,18 @@ import {
 } from '../services/validation.service';
 import type { Reservation, UserReservationParams } from '../types/reservation';
 
-export function createReservationHandler(
+export async function createReservationHandler(
   request: Request<Record<string, string>, Reservation, unknown>,
   response: Response<Reservation, Record<string, never>, 201>,
-): void {
+): Promise<void> {
   const input = validateReservation(request.body);
-  response.status(201).json(createReservation(input));
+  response.status(201).json(await createReservation(input));
 }
 
-export function listUserReservationsHandler(
+export async function listUserReservationsHandler(
   request: Request<UserReservationParams>,
   response: Response<Reservation[], Record<string, never>, 200>,
-): void {
+): Promise<void> {
   const userId = validateIdentifier(request.params.userId, 'userId');
-  response.status(200).json(listUserReservations(userId));
+  response.status(200).json(await listUserReservations(userId));
 }

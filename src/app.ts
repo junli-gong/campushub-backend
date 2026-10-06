@@ -1,3 +1,6 @@
+import { connectDatabase } from './config/database';
+import type { Environment } from './config/environment';
+import { initializeModels } from './services/seed.service';
 import express, { type Express } from 'express';
 import { handleError } from './middleware/error.middleware';
 import { handleNotFound } from './middleware/not-found.middleware';
@@ -13,3 +16,10 @@ app.use('/api/v1', resourceRouter);
 app.use('/api/v1', reservationRouter);
 app.use(handleNotFound);
 app.use(handleError);
+
+export async function initializeApplication(
+  config: Environment,
+): Promise<void> {
+  await connectDatabase(config.mongodbUri, config.databaseTimeoutMs);
+  await initializeModels();
+}

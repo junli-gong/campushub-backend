@@ -1,24 +1,64 @@
-import { app } from './app';
+import type { Server } from 'node:http';
+import { once } from 'node:events';
+import { app, initializeApplication } from './app';
+import { readEnvironment } from './config/environment';
+import { disconnectDatabase } from './config/database';
 
-const configuredPort: string = process.env['PORT'] ?? '3000';
-const port: number = Number(configuredPort);
+let server: Server | undefined;
+let stopping = false;
 
-if (
-  !/^\d+$/.test(configuredPort) ||
-  !Number.isInteger(port) ||
-  port < 1 ||
-  port > 65535
-) {
-  throw new Error('PORT must be an integer between 1 and 65535');
+async function shutdown(): Promise<void> {
+  if (stopping) return;
+  stopping = true;
+  try {
+    if (server?.listening) {
+      const timeout = setTimeout(
+        (): void => server?.closeAllConnections(),
+        5000,
+      );
+      timeout.unref();
+      try {
+        await new Promise<void>(
+          (resolve: () => void, reject: (reason?: unknown) => void): void => {
+            server?.close((error?: Error): void =>
+              error ? reject(error) : resolve(),
+            );
+          },
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+  } finally {
+    await disconnectDatabase();
+  }
 }
 
-const server = app.listen(port);
+async function start(): Promise<void> {
+  const config = readEnvironment();
+  await initializeApplication(config);
+  server = app.listen(config.port);
+  await once(server, 'listening');
+  console.log(`CampusHub backend listening on http://localhost:${config.port}`);
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.once(signal, (): void => {
+      shutdown().catch((): void => {
+        console.error('Shutdown failed.');
+        process.exitCode = 1;
+      });
+    });
+  }
+}
 
-server.on('listening', (): void => {
-  console.log(`CampusHub backend listening on http://localhost:${port}`);
-});
-
-server.on('error', (error: Error): void => {
-  console.error('Failed to start CampusHub backend:', error.message);
-  process.exitCode = 1;
-});
+start()
+  .catch(async (): Promise<void> => {
+    console.error(
+      'Startup failed. Check PORT, MONGODB_URI, and MongoDB availability (a replica set is required for bookings).',
+    );
+    process.exitCode = 1;
+    await disconnectDatabase();
+  })
+  .catch((): void => {
+    console.error('Database cleanup failed.');
+    process.exitCode = 1;
+  });

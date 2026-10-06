@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import mongoose, { Types } from 'mongoose';
+import { connectDatabase, disconnectDatabase } from '../config/database';
+import { readTestDatabaseUri } from '../config/environment';
+import { seedResourcesIfMissing } from '../services/seed.service';
 import { once } from 'node:events';
 import { test, type TestContext } from 'node:test';
 import express, { type Request, type Response } from 'express';
 import { handleError } from '../middleware/error.middleware';
 import { app } from '../app';
-import { ResourceModel } from '../models/resource.model';
-import { ReservationModel } from '../models/reservation.model';
+import { ResourceModel } from '../models/Resource.model';
+import { ReservationModel } from '../models/Reservation.model';
 import { UserModel } from '../models/user.model';
 import { isTimestamp } from '../services/validation.service';
 
@@ -29,7 +34,24 @@ function error(result: HttpResult, status: number, code: string): void {
   assert.equal(typeof body['message'], 'string');
 }
 
-void test('reservation API follows the contract over real HTTP', async (context: TestContext): Promise<void> => {
+void test('reservation API follows the contract over real HTTP and MongoDB', async (context: TestContext): Promise<void> => {
+  const databaseName = `campushub_test_${randomUUID().replaceAll('-', '')}`;
+  const uri = readTestDatabaseUri();
+  context.after(async (): Promise<void> => {
+    try {
+      if (
+        mongoose.connection.readyState === mongoose.ConnectionStates.connected
+      ) {
+        assert.equal(mongoose.connection.name, databaseName);
+        await mongoose.connection.dropDatabase();
+      }
+    } finally {
+      await disconnectDatabase();
+    }
+  });
+  await connectDatabase(uri, 5000, databaseName);
+  await seedResourcesIfMissing();
+
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const address = server.address();
@@ -308,6 +330,96 @@ void test('reservation API follows the contract over real HTTP', async (context:
         );
       },
     );
+    await context.test(
+      'MongoDB stores ObjectId references and services hide internal fields',
+      async (): Promise<void> => {
+        const resource = await ResourceModel.findOne({ id: payload.resourceId })
+          .orFail()
+          .exec();
+        const stored = await ReservationModel.findOne({
+          userId: payload.userId,
+          startTime: new Date(payload.startTime),
+          resourceId: resource._id,
+        })
+          .orFail()
+          .exec();
+        assert.ok(stored.resourceId instanceof Types.ObjectId);
+        assert.ok(stored.resourceId.equals(resource._id));
+        assert.ok(stored.startTime instanceof Date);
+        const result = await request('/reservations/user/user-456');
+        assert.ok(Array.isArray(result.body));
+        for (const item of result.body) {
+          const reservation = object(item);
+          assert.equal('_id' in reservation, false);
+          assert.equal('__v' in reservation, false);
+          assert.ok(
+            typeof reservation['resourceId'] === 'string' &&
+              reservation['resourceId'].startsWith('res-'),
+          );
+        }
+      },
+    );
+    await context.test(
+      'seeding is idempotent and does not overwrite existing resources',
+      async (): Promise<void> => {
+        await ResourceModel.updateOne(
+          { id: 'res-104' },
+          { $set: { name: 'Preserved custom name' } },
+        );
+        await seedResourcesIfMissing();
+        assert.equal(await ResourceModel.countDocuments(), 4);
+        assert.equal(
+          (await ResourceModel.findOne({ id: 'res-104' }).orFail()).name,
+          'Preserved custom name',
+        );
+      },
+    );
+    await context.test(
+      'CONFIRMED blocks conflicts; CANCELLED permits rebooking and is not active',
+      async (): Promise<void> => {
+        const data = {
+          ...payload,
+          userId: 'status-user',
+          resourceId: 'res-103',
+          startTime: '2026-10-02T10:00:00Z',
+          endTime: '2026-10-02T11:00:00Z',
+        };
+        const created = await request('/reservations', data);
+        assert.equal(created.status, 201);
+        const id = object(created.body)['id'];
+        assert.equal(typeof id, 'string');
+        assert.ok(typeof id === 'string');
+        await ReservationModel.updateOne(
+          { id },
+          { $set: { status: 'CONFIRMED' } },
+        );
+        error(await request('/reservations', data), 409, 'DOUBLE_BOOKING');
+        const active = await request('/reservations/user/status-user');
+        assert.ok(Array.isArray(active.body));
+        assert.equal(object(active.body[0])['status'], 'CONFIRMED');
+        await ReservationModel.updateOne(
+          { id },
+          { $set: { status: 'CANCELLED' } },
+        );
+        assert.deepEqual(await request('/reservations/user/status-user'), {
+          status: 200,
+          body: [],
+        });
+        assert.equal((await request('/reservations', data)).status, 201);
+      },
+    );
+    await context.test(
+      'data and conflict protection survive disconnect/reconnect; database failures return 500',
+      async (subcontext: TestContext): Promise<void> => {
+        const before = await request('/reservations/user/user-456');
+        subcontext.mock.method(console, 'error', (): void => {});
+        await disconnectDatabase();
+        error(await request('/resources'), 500, 'INTERNAL_ERROR');
+        await connectDatabase(uri, 5000, databaseName);
+        assert.deepEqual(await request('/reservations/user/user-456'), before);
+        error(await request('/reservations', payload), 409, 'DOUBLE_BOOKING');
+      },
+    );
   } finally {
     await new Promise<void>(
       (resolve: () => void, reject: (reason?: unknown) => void): void => {
@@ -347,7 +459,7 @@ void test('Mongoose schemas validate without a database', async (): Promise<void
   );
   const reservation = {
     id: 'booking-1',
-    resourceId: 'res-101',
+    resourceId: new Types.ObjectId(),
     userId: 'user-456',
     startTime: new Date('2026-10-01T10:00:00Z'),
     endTime: new Date('2026-10-01T11:00:00Z'),

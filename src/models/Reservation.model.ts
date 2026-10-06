@@ -1,10 +1,10 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, type Types } from 'mongoose';
 import type { ReservationStatus } from '../types/reservation';
 
 // Persistence uses Date values; HTTP serialization uses ISO 8601 strings.
 export interface ReservationDocument {
   id: string;
-  resourceId: string;
+  resourceId: Types.ObjectId;
   userId: string;
   startTime: Date;
   endTime: Date;
@@ -20,9 +20,9 @@ export const reservationSchema = new Schema<ReservationDocument>(
       match: /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/,
     },
     resourceId: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'Resource',
       required: true,
-      match: /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/,
     },
     userId: {
       type: String,

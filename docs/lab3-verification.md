@@ -1,6 +1,6 @@
 # Lab 3 verification and student audit checklist
 
-Automated verification performed on 2026-10-05 (America/Los_Angeles). This document records agent-executed checks. It does **not** claim that the student's required NO AI manual audit or Canvas submission has occurred.
+Automated verification performed on 2026-10-05 (America/Los_Angeles). The executed checks below were automated; the student's NO AI manual audit is recorded separately at the end.
 
 ## Deliverables and design
 
@@ -65,14 +65,16 @@ Restarting the API no longer resets reservations. Repeating a previously success
 
 ## Required student manual audit — NO AI
 
-Part 3 of the assignment says: “Conduct a manual code audit (NO AI)”. The student must inspect the actual source without treating the automated findings above as completion of that requirement. No boxes below were checked by the agent.
+Part 3 of the assignment says: “Conduct a manual code audit (NO AI)”. The automated findings above do not count toward that requirement.
 
-- [ ] Open Resource.model.ts and Reservation.model.ts; verify exported typed interfaces, required properties, enums, Date fields, and ObjectId reference. Confirm no raw any types.
-- [ ] Open both controllers; check that they know service methods, not Mongoose models or queries. Explain how awaited failures reach the final error middleware.
-- [ ] Open both services; confirm that queries and booking logic live here and there are no Express requests, responses, or HTTP status codes.
-- [ ] Open the routers and app.ts; confirm exact Lab 2 route paths and middleware ordering.
-- [ ] Open src/config/, server.ts, and .env-example; verify environment configuration is centralized and the database connects before the listener starts.
-- [ ] Personally rerun the README curl examples and understand why the database and seed step are now needed.
+Audited manually by Tim Gong on 2026-10-05.
+
+- [x] Open Resource.model.ts and Reservation.model.ts; verify exported typed interfaces, required properties, enums, Date fields, and ObjectId reference. Confirm no raw any types.
+- [x] Open both controllers; check that they know service methods, not Mongoose models or queries. Explain how awaited failures reach the final error middleware.
+- [x] Open both services; confirm that queries and booking logic live here and there are no Express requests, responses, or HTTP status codes.
+- [x] Open the routers and app.ts; confirm exact Lab 2 route paths and middleware ordering.
+- [x] Open src/config/, server.ts, and .env-example; verify environment configuration is centralized and the database connects before the listener starts.
+- [x] Personally rerun the README curl examples and understand why the database and seed step are now needed.
 - [ ] Submit the repository URL to the Lab 3 Canvas assignment.
 
 The handout contains a contradictory sentence about ORM methods being used in controllers. The implementation follows its repeated, explicit boundary: controllers call services, and services own database interactions.

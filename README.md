@@ -22,7 +22,7 @@ Lab 3 requires a real database **and seeded resources before the API tests**. Th
 
 ## Contract and API
 
-[docs/openapi.json](docs/openapi.json) is the authoritative contract, updated to version 1.1.0 for Lab 4.
+[docs/openapi.json](docs/openapi.json) is the authoritative contract (version 1.1.0).
 
 | Method | Endpoint                             | Behavior                                                       |
 | ------ | ------------------------------------ | -------------------------------------------------------------- |
@@ -30,8 +30,10 @@ Lab 3 requires a real database **and seeded resources before the API tests**. Th
 | GET    | `/api/v1/resources`                  | Resource array; optional `type` and `isAvailable` filters      |
 | POST   | `/api/v1/reservations`               | 201 created; 400 invalid input; 409 overlapping active booking |
 | GET    | `/api/v1/reservations/user/{userId}` | All user bookings, including CANCELLED, 200                    |
+| PATCH  | `/api/v1/reservations/{id}/confirm`  | 200 CONFIRMED; 404 unknown ID; 409 if already CANCELLED        |
+| PATCH  | `/api/v1/reservations/{id}/cancel`   | 200 CANCELLED; 404 unknown ID                                  |
 
-Errors use `{ "code": "VALIDATION_ERROR", "message": "..." }`, with `DOUBLE_BOOKING`, `NOT_FOUND`, or `INTERNAL_ERROR` as appropriate. Unknown routes return JSON 404 and unexpected errors return a sanitized JSON 500.
+Errors use `{ "code": "VALIDATION_ERROR", "message": "..." }`, with `DOUBLE_BOOKING`, `INVALID_TRANSITION`, `NOT_FOUND`, or `INTERNAL_ERROR` as appropriate. Unknown routes and reservation IDs return JSON 404, and unexpected errors return a sanitized JSON 500.
 
 ### Run the Lab 2 regression examples
 
@@ -50,15 +52,31 @@ curl -i http://localhost:3000/api/v1/reservations/user/user-456
 
 With fresh data, the POST returns 201, a generated id, and PENDING status. Repeating it returns 409, including after restarting the API. If that example has already been booked, use an unused time interval to test another successful creation. The automated test suite uses its own isolated database and remains repeatable.
 
+### Filters and status changes
+
+```sh
+curl -i 'http://localhost:3000/api/v1/resources?type=ROOM&isAvailable=true'
+
+# Replace BOOKING_ID with the id returned by POST.
+curl -i -X PATCH http://localhost:3000/api/v1/reservations/BOOKING_ID/confirm
+curl -i -X PATCH http://localhost:3000/api/v1/reservations/BOOKING_ID/cancel
+curl -i http://localhost:3000/api/v1/reservations/user/user-456
+```
+
+Both PATCH routes take no body and return the full reservation with 200. Repeating the current state is idempotent, and confirming a cancelled reservation returns 409 `INVALID_TRANSITION`. After cancellation, POST can book the same slot again with a new ID.
+
 ### Data and booking behavior
 
 - Types are ROOM, EQUIPMENT, LAB. A non-empty unmatched type (including STUDY_ROOM) returns 200 with `[]`; empty or repeated values return 400, preserving the reviewed Lab 2 behavior.
+- `isAvailable` accepts exactly `true` or `false` and combines with `type` using AND; empty, repeated, or other values return 400. It is administrative availability, not availability for a requested time slot.
 - API resource IDs remain strings such as `res-101`. The service looks up Resource's MongoDB `_id` and stores an ObjectId reference in Reservation.resourceId. Responses translate that reference back to the public ID and never expose `_id`, `__v`, or internal bookingVersion.
 - Dates are stored as MongoDB dates and serialized as UTC ISO 8601 strings. Timezone offsets may normalize to `Z`; represented instants remain the same.
 - Requests accept exactly resourceId, userId, startTime, endTime. Real calendar dates, required timezone, up to three fractional digits, and endTime > startTime are validated before persistence.
 - PENDING and CONFIRMED reservations block overlaps. CANCELLED reservations remain in user history and do not block rebooking. Intervals are half-open `[startTime, endTime)`, so adjacent bookings are allowed.
+- Status transitions are PENDING → CONFIRMED and PENDING or CONFIRMED → CANCELLED. CANCELLED is terminal. Status changes share the resource transaction with creation, including after a resource becomes administratively unavailable.
+- The user endpoint returns all bookings, including CANCELLED history: Lab 4 asks for all of a student's bookings, whereas Lab 2 listed only active ones. `/confirm` exists because Lab 4 requires updates to both CONFIRMED and CANCELLED; `/cancel` is the route the lab names.
 - A transaction first increments the resource's internal bookingVersion, then checks for an overlap and inserts the reservation. Concurrent transactions for the same resource conflict and retry, preventing the race in a bare find-then-create. MongoDB must support transactions: use the supplied replica set or an existing replica set/Atlas deployment, not a standalone mongod. Startup and `npm run seed` exit with an error when connected to a standalone server.
-- `isAvailable` is administrative availability. Unknown or unavailable resources return 400. Seeded `res-104` is unavailable.
+- Creating a reservation for an unknown or unavailable resource returns 400. Seeded `res-104` is unavailable.
 - No authentication or user-management API is introduced. userId is still supplied by the caller. All booking writes must use the service to preserve conflict guarantees; no production tenant isolation is claimed.
 
 ## Commands
@@ -96,22 +114,4 @@ ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-l
 - [VERIFICATION.md](VERIFICATION.md): Lab 1 checks and review.
 - [docs/lab2-verification.md](docs/lab2-verification.md): Lab 2 checks, contract decisions, and review.
 - [docs/lab3-verification.md](docs/lab3-verification.md): Lab 3 checks and the manual layer-isolation audit checklist.
-
-## Lab 4: Reservation state management
-
-- `GET /api/v1/resources?type=ROOM&isAvailable=true`: filters combine with AND. `isAvailable` accepts exactly `true` or `false`; empty, repeated, or other values return 400. It describes administrative availability, not availability for a requested time slot.
-- `PATCH /api/v1/reservations/{id}/confirm`: PENDING → CONFIRMED, or idempotent CONFIRMED → CONFIRMED.
-- `PATCH /api/v1/reservations/{id}/cancel`: PENDING or CONFIRMED → CANCELLED; repeating cancellation is idempotent.
-- Both PATCH routes need no body and return the full reservation with 200. Invalid IDs return 400, missing bookings 404, and confirmation after cancellation returns 409 `INVALID_TRANSITION`. Unexpected errors return sanitized 500.
-- CANCELLED is terminal. Rebooking requires POST and gets a new ID. Status changes share the resource transaction lock with creation, including when a resource has become administratively unavailable.
-- Lab 4 explicitly requests **all** user bookings. Unlike Lab 2's active-only list, the user endpoint now includes CANCELLED history. Conflict queries still consider only PENDING and CONFIRMED.
-- Part 1 requests both CONFIRMED and CANCELLED updates, so `/confirm` complements Part 2's specified `/cancel` route.
-
-```sh
-# Replace BOOKING_ID with the id returned by POST.
-curl -i -X PATCH http://localhost:3000/api/v1/reservations/BOOKING_ID/confirm
-curl -i -X PATCH http://localhost:3000/api/v1/reservations/BOOKING_ID/cancel
-curl -i http://localhost:3000/api/v1/reservations/user/user-456
-```
-
-See [steering log](docs/lab4-steering-log.md) and [verification record](docs/lab4-verification.md).
+- [docs/lab4-verification.md](docs/lab4-verification.md) and [docs/lab4-steering-log.md](docs/lab4-steering-log.md): Lab 4 checks, review, and agent steering log.

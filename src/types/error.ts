@@ -1,5 +1,9 @@
 export type ErrorCode =
-  'VALIDATION_ERROR' | 'DOUBLE_BOOKING' | 'NOT_FOUND' | 'INTERNAL_ERROR';
+  | 'VALIDATION_ERROR'
+  | 'DOUBLE_BOOKING'
+  | 'NOT_FOUND'
+  | 'INTERNAL_ERROR'
+  | 'INVALID_TRANSITION';
 
 export interface ErrorResponse {
   code: ErrorCode;
@@ -8,7 +12,7 @@ export interface ErrorResponse {
 
 export class DomainError extends Error {
   constructor(
-    public readonly code: 'VALIDATION_ERROR' | 'DOUBLE_BOOKING',
+    public readonly code: Exclude<ErrorCode, 'INTERNAL_ERROR'>,
     message: string,
   ) {
     super(message);

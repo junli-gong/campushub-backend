@@ -62,13 +62,14 @@ void test('reservation API follows the contract over real HTTP and MongoDB', asy
     path: string,
     body?: unknown,
     raw?: string,
+    method?: string,
   ): Promise<HttpResult> {
     const response = await fetch(
       base + path,
-      body === undefined && raw === undefined
+      body === undefined && raw === undefined && method === undefined
         ? {}
         : {
-            method: 'POST',
+            method: method ?? 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: raw ?? JSON.stringify(body),
           },
@@ -209,7 +210,7 @@ void test('reservation API follows the contract over real HTTP and MongoDB', asy
       },
     );
     await context.test(
-      'list active reservations only for the requested user',
+      'list reservations only for the requested user',
       async (): Promise<void> => {
         const result = await request('/reservations/user/user-456');
         assert.equal(result.status, 200);
@@ -375,7 +376,7 @@ void test('reservation API follows the contract over real HTTP and MongoDB', asy
       },
     );
     await context.test(
-      'CONFIRMED blocks conflicts; CANCELLED permits rebooking and is not active',
+      'CONFIRMED blocks conflicts; cancellation frees the slot and remains in history',
       async (): Promise<void> => {
         const data = {
           ...payload,
@@ -389,23 +390,153 @@ void test('reservation API follows the contract over real HTTP and MongoDB', asy
         const id = object(created.body)['id'];
         assert.equal(typeof id, 'string');
         assert.ok(typeof id === 'string');
-        await ReservationModel.updateOne(
-          { id },
-          { $set: { status: 'CONFIRMED' } },
+        const confirmed = await request(
+          `/reservations/${id}/confirm`,
+          undefined,
+          undefined,
+          'PATCH',
         );
+        assert.equal(confirmed.status, 200);
+        assert.equal(object(confirmed.body)['status'], 'CONFIRMED');
         error(await request('/reservations', data), 409, 'DOUBLE_BOOKING');
         const active = await request('/reservations/user/status-user');
         assert.ok(Array.isArray(active.body));
         assert.equal(object(active.body[0])['status'], 'CONFIRMED');
-        await ReservationModel.updateOne(
-          { id },
-          { $set: { status: 'CANCELLED' } },
+        const cancelled = await request(
+          `/reservations/${id}/cancel`,
+          undefined,
+          undefined,
+          'PATCH',
         );
-        assert.deepEqual(await request('/reservations/user/status-user'), {
-          status: 200,
-          body: [],
-        });
+        assert.equal(cancelled.status, 200);
+        assert.equal(object(cancelled.body)['status'], 'CANCELLED');
+        assert.deepEqual(
+          await request(
+            `/reservations/${id}/cancel`,
+            undefined,
+            undefined,
+            'PATCH',
+          ),
+          cancelled,
+        );
+        error(
+          await request(
+            `/reservations/${id}/confirm`,
+            undefined,
+            undefined,
+            'PATCH',
+          ),
+          409,
+          'INVALID_TRANSITION',
+        );
+        const history = await request('/reservations/user/status-user');
+        assert.deepEqual(history, { status: 200, body: [cancelled.body] });
         assert.equal((await request('/reservations', data)).status, 201);
+      },
+    );
+    await context.test(
+      'availability filters distinguish false and reject malformed values',
+      async (): Promise<void> => {
+        for (const [query, ids] of [
+          ['isAvailable=true', ['res-101', 'res-102', 'res-103']],
+          ['isAvailable=false', ['res-104']],
+          ['type=ROOM&isAvailable=true', ['res-101']],
+          ['type=LAB&isAvailable=false', []],
+        ] as const) {
+          const result = await request(`/resources?${query}`);
+          assert.equal(result.status, 200);
+          assert.ok(Array.isArray(result.body));
+          assert.deepEqual(
+            result.body.map((item: unknown): unknown => object(item)['id']),
+            ids,
+          );
+        }
+        for (const query of [
+          'isAvailable=',
+          'isAvailable=1',
+          'isAvailable=TRUE',
+          'isAvailable=false&isAvailable=true',
+          'type=unknown&isAvailable=no',
+        ]) {
+          error(await request(`/resources?${query}`), 400, 'VALIDATION_ERROR');
+        }
+      },
+    );
+    await context.test(
+      'status endpoints reject invalid and missing IDs',
+      async (): Promise<void> => {
+        for (const action of ['confirm', 'cancel']) {
+          error(
+            await request(
+              `/reservations/missing/${action}`,
+              undefined,
+              undefined,
+              'PATCH',
+            ),
+            404,
+            'NOT_FOUND',
+          );
+          error(
+            await request(
+              `/reservations/bad%20id/${action}`,
+              undefined,
+              undefined,
+              'PATCH',
+            ),
+            400,
+            'VALIDATION_ERROR',
+          );
+        }
+      },
+    );
+    await context.test(
+      'concurrent confirm/cancel never resurrects a cancelled booking',
+      async (): Promise<void> => {
+        const data = {
+          ...payload,
+          userId: 'race-user',
+          startTime: '2026-11-01T10:00:00Z',
+          endTime: '2026-11-01T11:00:00Z',
+        };
+        const created = await request('/reservations', data);
+        assert.equal(created.status, 201);
+        const id = object(created.body)['id'];
+        assert.ok(typeof id === 'string');
+        const confirmed = await request(
+          `/reservations/${id}/confirm`,
+          undefined,
+          undefined,
+          'PATCH',
+        );
+        assert.deepEqual(
+          await request(
+            `/reservations/${id}/confirm`,
+            undefined,
+            undefined,
+            'PATCH',
+          ),
+          confirmed,
+        );
+        const [cancelled, confirmation] = await Promise.all([
+          request(`/reservations/${id}/cancel`, undefined, undefined, 'PATCH'),
+          request(`/reservations/${id}/confirm`, undefined, undefined, 'PATCH'),
+        ]);
+        assert.equal(cancelled.status, 200);
+        assert.ok(confirmation.status === 200 || confirmation.status === 409);
+        if (confirmation.status === 409)
+          error(confirmation, 409, 'INVALID_TRANSITION');
+        assert.deepEqual(await request('/reservations/user/race-user'), {
+          status: 200,
+          body: [cancelled.body],
+        });
+        const attempts = await Promise.all([
+          request('/reservations', data),
+          request('/reservations', data),
+        ]);
+        assert.deepEqual(
+          attempts.map((result: HttpResult): number => result.status).sort(),
+          [201, 409],
+        );
       },
     );
     await context.test(

@@ -88,3 +88,15 @@ export function validateReservation(value: unknown): CreateReservationRequest {
     endTime: value.endTime,
   };
 }
+
+export function validateAvailabilityFilter(
+  value: unknown,
+): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new DomainError(
+    'VALIDATION_ERROR',
+    'isAvailable must be exactly true or false.',
+  );
+}

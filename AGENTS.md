@@ -59,3 +59,10 @@
 - Transactions require a replica set or sharded cluster; `connectDatabase` rejects any other deployment. `npm run db:up` starts a local single-node replica set.
 - Seed explicitly and idempotently through the seed service; never erase existing application data on startup.
 - Tests use a unique `campushub_test_*` database and drop only that database. Test fixtures may call models directly.
+
+## Lab 4 state management
+
+- The user reservation endpoint lists all statuses, including CANCELLED history. Only collision checks filter to active statuses.
+- `/reservations/{id}/confirm` and `/reservations/{id}/cancel` return 200 Reservation. Repeating a state is idempotent; CANCELLED cannot return to CONFIRMED (409 INVALID_TRANSITION). Unknown IDs return 404 NOT_FOUND.
+- Status changes use the same resource write transaction lock as creation. Cancellation frees a slot after commit without deleting booking history.
+- Resource filtering accepts an optional exact `true`/`false` isAvailable query parameter and combines it with type using AND. Never coerce the string `false` with Boolean().

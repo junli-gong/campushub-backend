@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import {
+  confirmReservationHandler,
+  cancelReservationHandler,
   createReservationHandler,
   listUserReservationsHandler,
 } from '../controllers/reservation.controller';
@@ -10,3 +12,7 @@ reservationRouter.get(
   '/reservations/user/:userId',
   listUserReservationsHandler,
 );
+
+reservationRouter.patch('/reservations/:id/confirm', confirmReservationHandler);
+
+reservationRouter.patch('/reservations/:id/cancel', cancelReservationHandler);

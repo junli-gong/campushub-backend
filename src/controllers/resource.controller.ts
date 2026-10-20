@@ -1,7 +1,10 @@
 import type { Request } from 'express';
 import type { Response } from 'express-serve-static-core';
 import { listResources } from '../services/resource.service';
-import { validateTypeFilter } from '../services/validation.service';
+import {
+  validateTypeFilter,
+  validateAvailabilityFilter,
+} from '../services/validation.service';
 import type { Resource } from '../types/reservation';
 
 export async function listResourcesHandler(
@@ -10,5 +13,10 @@ export async function listResourcesHandler(
 ): Promise<void> {
   response
     .status(200)
-    .json(await listResources(validateTypeFilter(request.query['type'])));
+    .json(
+      await listResources(
+        validateTypeFilter(request.query['type']),
+        validateAvailabilityFilter(request.query['isAvailable']),
+      ),
+    );
 }

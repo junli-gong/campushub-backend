@@ -5,7 +5,11 @@ import { DomainError, type ErrorResponse } from '../types/error';
 export function handleError(
   error: unknown,
   _request: Request,
-  response: Response<ErrorResponse, Record<string, never>, 400 | 409 | 500>,
+  response: Response<
+    ErrorResponse,
+    Record<string, never>,
+    400 | 404 | 409 | 500
+  >,
   next: NextFunction,
 ): void {
   if (response.headersSent) {
@@ -14,7 +18,14 @@ export function handleError(
   }
   if (error instanceof DomainError) {
     response
-      .status(error.code === 'DOUBLE_BOOKING' ? 409 : 400)
+      .status(
+        error.code === 'NOT_FOUND'
+          ? 404
+          : error.code === 'DOUBLE_BOOKING' ||
+              error.code === 'INVALID_TRANSITION'
+            ? 409
+            : 400,
+      )
       .json({ code: error.code, message: error.message });
     return;
   }

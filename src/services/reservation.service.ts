@@ -74,7 +74,6 @@ export async function listUserReservations(
 ): Promise<Reservation[]> {
   const reservations = await ReservationModel.find({
     userId,
-    status: { $in: ['PENDING', 'CONFIRMED'] },
   })
     .sort({ _id: 1 })
     .lean()
@@ -101,4 +100,36 @@ export async function listUserReservations(
       throw new Error('Reservation references a missing resource');
     return serializeReservation(reservation, resourceId);
   });
+}
+
+export async function updateReservationStatus(
+  id: string,
+  status: 'CONFIRMED' | 'CANCELLED',
+): Promise<Reservation> {
+  return ResourceModel.db.transaction(
+    async (session: ClientSession): Promise<Reservation> => {
+      const existing = await ReservationModel.findOne({ id })
+        .session(session)
+        .exec();
+      if (!existing)
+        throw new DomainError('NOT_FOUND', 'Reservation not found.');
+      // Share the resource write lock with creation, serializing cancellation/rebooking.
+      const resource = await ResourceModel.findOneAndUpdate(
+        { _id: existing.resourceId },
+        { $inc: { bookingVersion: 1 } },
+        { session, returnDocument: 'after' },
+      ).exec();
+      if (!resource)
+        throw new Error('Reservation references a missing resource');
+      if (existing.status === 'CANCELLED' && status === 'CONFIRMED') {
+        throw new DomainError(
+          'INVALID_TRANSITION',
+          'Cancelled reservations cannot be confirmed.',
+        );
+      }
+      existing.status = status;
+      await existing.save({ session });
+      return serializeReservation(existing, resource.id);
+    },
+  );
 }

@@ -11,7 +11,10 @@ export function serializeResource(resource: ResourceDocument): Resource {
   };
 }
 
-export async function listResources(type?: string): Promise<Resource[]> {
+export async function listResources(
+  type?: string,
+  isAvailable?: boolean,
+): Promise<Resource[]> {
   if (
     type !== undefined &&
     type !== 'ROOM' &&
@@ -19,7 +22,10 @@ export async function listResources(type?: string): Promise<Resource[]> {
     type !== 'LAB'
   )
     return [];
-  const resources = await ResourceModel.find(type === undefined ? {} : { type })
+  const resources = await ResourceModel.find({
+    ...(type === undefined ? {} : { type }),
+    ...(isAvailable === undefined ? {} : { isAvailable }),
+  })
     .sort({ id: 1 })
     .lean()
     .exec();

@@ -49,20 +49,15 @@
 
 - `docs/openapi.json` is the authoritative API contract. Read it before changing routes, controllers, validation, types, or responses. Change the contract first, then update `src/types/`, routes, and tests to match. Never add endpoints, fields, or status codes that the contract does not define.
 - Keep client-writable request schemas separate from response schemas when the server owns fields. Reservation creation accepts only `resourceId`, `userId`, `startTime`, and `endTime`; the server generates `id` and sets `status` to PENDING.
-- Resource types are ROOM, EQUIPMENT, and LAB. The `type` filter accepts any non-empty string, and a value matching no type returns an empty array.
-- Active reservations are PENDING or CONFIRMED. Booking intervals are half-open `[startTime, endTime)`: reject an overlapping active reservation for the same resource with 409 `DOUBLE_BOOKING`, and allow adjacent bookings.
+- Resource types are ROOM, EQUIPMENT, and LAB. The `type` filter accepts any non-empty string, and a value matching no type returns an empty array. The optional `isAvailable` filter accepts exactly `true` or `false` (never coerce the string `false` with `Boolean()`) and combines with `type` using AND.
+- Active reservations are PENDING or CONFIRMED. Booking intervals are half-open `[startTime, endTime)`: reject an overlapping active reservation for the same resource with 409 `DOUBLE_BOOKING`, and allow adjacent bookings. The user reservation list returns every status, including CANCELLED history; only conflict checks filter to active statuses.
+- `PATCH /reservations/{id}/confirm` and `/cancel` return 200 with the Reservation. Repeating the current state is idempotent. CANCELLED is terminal: confirming it returns 409 `INVALID_TRANSITION`, and cancellation never returns 409. Unknown IDs return 404 `NOT_FOUND`.
 - Public IDs are strings such as `res-101`. Services translate them to ObjectId references and serialize only contract fields; never expose `_id`, `__v`, or internal fields such as `bookingVersion`.
 
 ## Persistence
 
 - Create reservations inside a MongoDB transaction that first writes the resource (`bookingVersion`) and then checks for overlap and inserts, so concurrent bookings cannot both succeed. Never replace this with an unprotected find-then-create.
+- Status changes take the same resource write inside a transaction, so confirmation, cancellation, and creation on one resource serialize. Cancellation frees the slot on commit and keeps the booking as history.
 - Transactions require a replica set or sharded cluster; `connectDatabase` rejects any other deployment. `npm run db:up` starts a local single-node replica set.
 - Seed explicitly and idempotently through the seed service; never erase existing application data on startup.
 - Tests use a unique `campushub_test_*` database and drop only that database. Test fixtures may call models directly.
-
-## Lab 4 state management
-
-- The user reservation endpoint lists all statuses, including CANCELLED history. Only collision checks filter to active statuses.
-- `/reservations/{id}/confirm` and `/reservations/{id}/cancel` return 200 Reservation. Repeating a state is idempotent; CANCELLED cannot return to CONFIRMED (409 INVALID_TRANSITION). Unknown IDs return 404 NOT_FOUND.
-- Status changes use the same resource write transaction lock as creation. Cancellation frees a slot after commit without deleting booking history.
-- Resource filtering accepts an optional exact `true`/`false` isAvailable query parameter and combines it with type using AND. Never coerce the string `false` with Boolean().

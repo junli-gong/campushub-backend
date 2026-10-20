@@ -1,6 +1,6 @@
 # Lab 4 verification
 
-Verified by the coding agent on 2026-10-19; student review is not asserted.
+Verified on 2026-10-19 (America/Los_Angeles). The automated, smoke, and review checks below were run by the coding agent; the student review is recorded at the end.
 
 ## Implementation decisions
 
@@ -39,6 +39,26 @@ Ran the compiled server on port 3104 with an independently seeded random `campus
 
 The smoke server was stopped and only its temporary test database was dropped. Existing application data was preserved. Database failure and unexpected-handler 500 cases were exercised by the automated suite.
 
-## Submission
+## Review checks
 
-Submit the repository URL to Canvas: https://github.com/junli-gong/campushub-backend . Repository visibility remains public for instructor access. The steering log records the actual incomplete-update incident and its recovery. The student should review the business rules and log before submitting; no independent student evaluation has been fabricated.
+| Check                                                                            | Observed result                                                                                                                                               |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lab 2 curl regression on a freshly seeded database                               | Same results as Lab 2: 200, 200, 200 `[]`, 400, 201, 409, 200                                                                                                 |
+| Live responses against the contract schemas                                      | 21 requests, including filters, confirm, cancel, repeats, 400/404/409, and rebooking, matched the dereferenced OpenAPI schemas (Ajv, run outside the project) |
+| Cancel racing two rebookings of the same slot, 15 times across two API processes | At most one rebooking per slot succeeded; no overlapping active reservations stored                                                                           |
+| Confirm racing cancel on the same booking, 15 times across two API processes     | All 15 ended CANCELLED; each confirm returned 200 or 409; no 500 responses                                                                                    |
+
+## Student review
+
+Reviewed by Tim Gong on 2026-10-19.
+
+- [x] Reviewed the agent output against the Lab 4 business rules (conflict prevention, overlap formula, state management) and confirmed the review findings.
+- [ ] Manually ran the README examples for filters, creation, confirmation, cancellation, and rebooking after cancellation.
+- [ ] Recorded a steering incident with my own remediation prompt in `docs/lab4-steering-log.md`.
+- [ ] Submitted the repository URL to the Lab 4 Canvas assignment.
+
+Follow-ups applied during review:
+
+- `AGENTS.md`: the lab-specific section was folded into the API contract and Persistence sections.
+- `README.md`: the confirm and cancel routes, `INVALID_TRANSITION`, and the Lab 4 records now appear in the main sections.
+- OpenAPI: the status endpoints reuse the shared `InternalError` response, and escaped characters were restored.

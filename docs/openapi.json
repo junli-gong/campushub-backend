@@ -203,7 +203,7 @@
       "patch": {
         "operationId": "confirmReservation",
         "summary": "Confirm a reservation",
-        "description": "No body required. Repeating the same transition is idempotent. CANCELLED is terminal; confirmation after cancellation returns 409.",
+        "description": "No body required. Moves a PENDING reservation to CONFIRMED; confirming again returns 200 with the same reservation. CANCELLED is terminal, so confirming a cancelled reservation returns 409 INVALID_TRANSITION.",
         "parameters": [
           {
             "name": "id",
@@ -246,11 +246,15 @@
             }
           },
           "409": {
-            "description": "INVALID_TRANSITION: cancelled reservation cannot be confirmed",
+            "description": "The reservation is CANCELLED and cannot be confirmed.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "code": "INVALID_TRANSITION",
+                  "message": "Cancelled reservations cannot be confirmed."
                 }
               }
             }
@@ -265,7 +269,7 @@
       "patch": {
         "operationId": "cancelReservation",
         "summary": "Cancel a reservation",
-        "description": "No body required. Repeating the same transition is idempotent. CANCELLED is terminal; confirmation after cancellation returns 409.",
+        "description": "No body required. Moves a PENDING or CONFIRMED reservation to CANCELLED, freeing its time slot while keeping it in user history. Cancelling again returns 200 with the same reservation; cancellation never returns 409.",
         "parameters": [
           {
             "name": "id",
@@ -299,16 +303,6 @@
           },
           "404": {
             "description": "Reservation not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "INVALID_TRANSITION: cancelled reservation cannot be confirmed",
             "content": {
               "application/json": {
                 "schema": {

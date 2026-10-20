@@ -53,8 +53,8 @@ The smoke server was stopped and only its temporary test database was dropped. E
 Reviewed by Tim Gong on 2026-10-19.
 
 - [x] Reviewed the agent output against the Lab 4 business rules (conflict prevention, overlap formula, state management) and confirmed the review findings.
-- [ ] Manually ran the README examples for filters, creation, confirmation, cancellation, and rebooking after cancellation.
-- [ ] Recorded a steering incident with my own remediation prompt in `docs/lab4-steering-log.md`.
+- [x] Manually ran the README examples for filters, creation, confirmation, cancellation, and rebooking after cancellation.
+- [x] Recorded a steering incident with my own remediation prompt in `docs/lab4-steering-log.md`.
 - [ ] Submitted the repository URL to the Lab 4 Canvas assignment.
 
 Follow-ups applied during review:
@@ -62,3 +62,4 @@ Follow-ups applied during review:
 - `AGENTS.md`: the lab-specific section was folded into the API contract and Persistence sections.
 - `README.md`: the confirm and cancel routes, `INVALID_TRANSITION`, and the Lab 4 records now appear in the main sections.
 - OpenAPI: the status endpoints reuse the shared `InternalError` response, and escaped characters were restored.
+- OpenAPI: `/cancel` no longer documents a 409 it can never return (steering log Incident 1).

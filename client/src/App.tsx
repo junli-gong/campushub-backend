@@ -125,7 +125,7 @@ export function App(): ReactElement {
       <footer className={styles.footer}>
         <span>CampusHub</span>
         <span>Find your focus. Make your mark.</span>
-        <span>CS 5500 · Lab 5</span>
+        <span>CS 5500</span>
       </footer>
     </div>
   );

@@ -87,7 +87,7 @@ Reviewed by Tim Gong on 2026-10-26.
 
 - [x] Reviewed the agent output against the Lab 5 requirements and confirmed the review findings.
 - [x] Tested the UI myself: double-booked a resource and saw the 409 alert, cancelled a booking, and checked loading and error states.
-- [ ] Submitted the repository URL to the Lab 5 Canvas assignment.
+- [x] Submitted the repository URL to the Lab 5 Canvas assignment.
 
 Follow-ups applied during review:
 

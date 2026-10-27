@@ -5,7 +5,7 @@
 - Apply these rules to every change in this repository. Read this file before generating code.
 - CampusHub is a multi-tenant campus resource management backend.
 - Write application code exclusively in TypeScript. Never create or commit JavaScript (`.js`, `.cjs`, `.mjs`) source files. Compiler-generated JavaScript in ignored `dist/` is allowed.
-- Runtime dependencies are limited to Express and Mongoose; Node.js built-ins are allowed. Use Mongoose for MongoDB access. Do not add other packages without explicit user approval.
+- Backend runtime dependencies are limited to Express and Mongoose; Node.js built-ins are allowed. Use Mongoose for MongoDB access. Do not add other packages without explicit user approval.
 - Approved development tools: TypeScript, ts-node, @types/node, @types/express, ESLint, @eslint/js, typescript-eslint, and Prettier. Use Node's built-in test runner for tests.
 
 ## Architectural boundaries
@@ -61,3 +61,13 @@
 - Transactions require a replica set or sharded cluster; `connectDatabase` rejects any other deployment. `npm run db:up` starts a local single-node replica set.
 - Seed explicitly and idempotently through the seed service; never erase existing application data on startup.
 - Tests use a unique `campushub_test_*` database and drop only that database. Test fixtures may call models directly.
+
+## Lab 5 frontend
+
+- The authorized Lab 5 stack adds React, React DOM, Vite, the React Vite plugin, and React type definitions inside `/client`. Use native fetch and CSS Modules; no additional runtime library is needed.
+- Functional React components only, with named explicit prop interfaces and explicit function return types. Use standard hooks/custom hooks; API calls belong in `client/src/api/campushubApi.ts`, never inline in JSX.
+- Derive frontend DTOs from the contract's shared TypeScript interfaces using type-only imports. Never import backend runtime code into the browser.
+- Every async workflow needs loading, error, and recovery states. Ignore stale responses when filters or students change; block duplicate mutations. Show explicit 409 DOUBLE_BOOKING feedback.
+- My Bookings filters the all-status backend response to PENDING/CONFIRMED without changing the backend contract. Cancellation refreshes the view and booking creation refreshes the dashboard.
+- This is a demo student identifier, not authentication. Local datetime inputs are converted to UTC ISO timestamps; display dates in the browser's local timezone.
+- Run frontend `npm run check` and `npm run build`, the existing backend checks/tests, and browser verification of booking, conflict, cancellation, and error recovery. Record only checks actually performed.

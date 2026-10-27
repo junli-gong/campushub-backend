@@ -2,8 +2,10 @@ import { useCallback, useRef, useState, type ReactElement } from 'react';
 import {
   cancelReservation,
   errorMessage,
+  fetchResources,
   fetchUserReservations,
   type Reservation,
+  type Resource,
 } from '../api/campushubApi';
 import { useAsyncList } from '../hooks/useAsyncList';
 import styles from '../App.module.css';
@@ -27,6 +29,18 @@ export function UserReservations({
     [userId],
   );
   const { data, isLoading, error } = useAsyncList(load, revision + refresh);
+  // Names label bookings; a resource taken out of service falls back to its ID.
+  const loadResources = useCallback(
+    (): Promise<Resource[]> => fetchResources(),
+    [],
+  );
+  const resources = useAsyncList(loadResources, 0);
+  const names = new Map(
+    resources.data.map((resource: Resource): [string, string] => [
+      resource.id,
+      resource.name,
+    ]),
+  );
   const active = data.filter(
     (booking: Reservation): boolean => booking.status !== 'CANCELLED',
   );
@@ -109,12 +123,14 @@ export function UserReservations({
           <article className={styles.bookingRow} key={booking.id}>
             <div>
               <span className={styles.status}>{booking.status}</span>
-              <h3>{booking.resourceId}</h3>
+              <h3>{names.get(booking.resourceId) ?? booking.resourceId}</h3>
               <p>
                 {new Date(booking.startTime).toLocaleString()} –{' '}
                 {new Date(booking.endTime).toLocaleString()}
               </p>
-              <small className={styles.muted}>Booking {booking.id}</small>
+              <small className={styles.muted}>
+                {booking.resourceId} · Booking {booking.id}
+              </small>
             </div>
             <button
               type="button"

@@ -1,6 +1,6 @@
-# CampusHub Backend
+# CampusHub
 
-CS 5500 Labs 1–5: context boundaries, an OpenAPI contract, and a MongoDB-backed reservation API.
+CS 5500 Labs 1–5: context boundaries, an OpenAPI contract, a MongoDB-backed reservation API, and a React client.
 
 ## Setup
 
@@ -8,6 +8,7 @@ Requires Node.js >=24.21.0, npm >=11.19.1, and Docker Desktop running (or anothe
 
 ```sh
 npm ci
+npm --prefix client ci
 cp .env-example .env
 npm run db:up
 npm run seed
@@ -79,6 +80,34 @@ Both PATCH routes take no body and return the full reservation with 200. Repeati
 - Creating a reservation for an unknown or unavailable resource returns 400. Seeded `res-104` is unavailable.
 - No authentication or user-management API is introduced. userId is still supplied by the caller. All booking writes must use the service to preserve conflict guarantees; no production tenant isolation is claimed.
 
+## Frontend
+
+The client in [`client/`](client/) uses React, TypeScript, Vite, native fetch, and CSS Modules, and calls the API above without changing it. With the API running (see Setup), open a **second terminal** at the repository root:
+
+```sh
+npm --prefix client run dev
+```
+
+Open **http://127.0.0.1:5173**. Vite proxies `/api` to the backend on **127.0.0.1:3000**, so no CORS middleware is needed. If you customized the backend port, adjust the proxy target in `client/vite.config.ts` accordingly.
+
+- Filter available resources by Study rooms, Equipment, or Labs; choose **Reserve resource**.
+- Select local start and end times, then **Create reservation**. An overlapping booking displays a specific conflict alert and keeps the form usable.
+- **My Bookings** shows PENDING and CONFIRMED bookings, labeled by resource name (a resource taken out of service shows its ID). Cancel a booking to free its slot. The API keeps CANCELLED history; the client filters it out of this active-only view.
+- The default demo student is `user-456`. Enter a different valid student ID and select **Apply** to change the demo session. This is not login or authorization.
+- Loading, empty, validation, API, and network states are visible. Failed reads offer retry/refresh; failed mutations retain the form or booking and enable retry. In-flight mutations prevent duplicate clicks and student switching.
+- API responses are validated before display. Shared interfaces are imported using `import type`; backend runtime code is never bundled into the browser.
+
+### Frontend checks and production build
+
+```sh
+npm --prefix client run check
+npm --prefix client test
+npm --prefix client run build
+npm --prefix client run preview
+```
+
+`client/` declares its own tooling, so these also work after `cd client && npm ci`. Preview the production build at **http://127.0.0.1:4173**, with the API still running on port 3000. The preview proxy is for local verification. A deployed static client must have a same-origin `/api` reverse proxy pointing to the backend; no hosting deployment is included.
+
 ## Commands
 
 - `npm run db:up`: start local MongoDB and initialize/wait for the replica set.
@@ -105,6 +134,7 @@ src/models/Resource.model.ts Resource schema and strict document interface
 src/models/Reservation.model.ts ObjectId reference, Date fields, status enum
 src/scripts/seed.ts          CLI orchestration of the seed service
 src/tests/                   Database and boundary verification
+client/                      React + Vite client: API layer, components, hooks
 ```
 
 ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-layer imports from services and models, and `process.env` access outside configuration. Only Express and Mongoose are runtime dependencies. Models have no connections and controllers have no ORM queries.
@@ -115,45 +145,4 @@ ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-l
 - [docs/lab2-verification.md](docs/lab2-verification.md): Lab 2 checks, contract decisions, and review.
 - [docs/lab3-verification.md](docs/lab3-verification.md): Lab 3 checks and the manual layer-isolation audit checklist.
 - [docs/lab4-verification.md](docs/lab4-verification.md) and [docs/lab4-steering-log.md](docs/lab4-steering-log.md): Lab 4 checks, review, and agent steering log.
-
-## Lab 5: React frontend
-
-The client lives in [`client/`](client/). It uses React, TypeScript, Vite, native fetch, and CSS Modules. The backend contract remains unchanged. Install both packages from the repository root:
-
-```sh
-npm ci
-npm --prefix client ci
-# For a fresh checkout only; preserve an existing .env:
-cp .env-example .env
-npm run db:up
-npm run seed
-npm run dev
-```
-
-Keep the API running and open a **second terminal** at the repository root:
-
-```sh
-npm --prefix client run dev
-```
-
-Open **http://127.0.0.1:5173**. Vite proxies `/api` to the backend on **127.0.0.1:3000**, so no CORS middleware is needed. If you customized the backend port, adjust the proxy target in `client/vite.config.ts` accordingly.
-
-- Filter available resources by Study rooms, Equipment, or Labs; choose **Reserve resource**.
-- Select local start and end times, then **Create reservation**. An overlapping booking displays a specific conflict alert and keeps the form usable.
-- **My Bookings** shows PENDING and CONFIRMED bookings. Cancel a booking to free its slot. Lab 4's API still retains CANCELLED history; the client filters it out of this active-only view.
-- The default demo student is `user-456`. Enter a different valid student ID and select **Apply** to change the demo session. This is not login or authorization.
-- Loading, empty, validation, API, and network states are visible. Failed reads offer retry/refresh; failed mutations retain the form or booking and enable retry. In-flight mutations prevent duplicate clicks and student switching.
-- API responses are validated before display. Shared interfaces are imported using `import type`; backend runtime code is never bundled into the browser.
-
-### Frontend verification and production build
-
-```sh
-npm --prefix client run check
-npm --prefix client test
-npm --prefix client run build
-npm --prefix client run preview
-```
-
-Preview the production build at **http://127.0.0.1:4173**, with the API still running on port 3000. The preview proxy is for local verification. A deployed static client must have a same-origin `/api` reverse proxy pointing to the backend; no hosting deployment is included in this lab.
-
-See [Lab 5 verification and browser audit](docs/lab5-verification.md) for the tested workflows and a repeatable review checklist.
+- [docs/lab5-verification.md](docs/lab5-verification.md): Lab 5 checks, browser audit, and review.

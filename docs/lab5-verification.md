@@ -1,6 +1,6 @@
 # Lab 5 — UI integration and state audit
 
-Date: 2026-10-26. These are checks performed by the coding agent, not a claim of independent student review. No Canvas submission was made by the agent.
+Date: 2026-10-26. The automated, browser, and review checks below were run by the coding agent; the student review is recorded at the end.
 
 ## Deliverables
 
@@ -10,7 +10,7 @@ Date: 2026-10-26. These are checks performed by the coding agent, not a claim of
 - `AGENTS.md`: frontend architecture, state, contract, styling, and verification guidelines.
 - `README.md`: fresh-checkout setup, two-terminal startup, test/build commands, and local production preview instructions.
 
-The handout refers to `docs/openapi.yaml`; this repository's authoritative equivalent remains `docs/openapi.json`. No API change was needed. Resources are queried with `isAvailable=true`; availability is administrative and does not promise that a specific time slot is free. The API still returns all user history, while My Bookings filters to PENDING/CONFIRMED as Lab 5 requires. Student IDs are demo identity input, not authentication.
+The handout refers to `docs/openapi.yaml`; this repository's authoritative equivalent remains `docs/openapi.json`. No API change was needed. Resources are queried with `isAvailable=true`; availability is administrative and does not promise that a specific time slot is free. The API still returns all user history, while My Bookings filters to PENDING/CONFIRMED as Lab 5 requires. Student IDs are demo identity input, not authentication. Because the client type-imports `src/types/`, it builds inside this repository (or with `src/types/` beside it), not from a copy of `client/` alone.
 
 ## Automated checks
 
@@ -62,7 +62,16 @@ Every request uses a 15-second AbortSignal timeout. Async mutations reset their 
 
 No missing-409-handling incident is invented: explicit conflict handling was included in the first UI implementation and then verified with the real API.
 
-## Repeatable student review
+## Review checks
+
+| Check                                                             | Observed result                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend `check`, `build`, `npm test`, contract lint               | Passed (24 tests, 0 lint errors); backend source and OpenAPI unchanged by Lab 5                                                                                                                                                                                                                                                                         |
+| `client/` installed on its own (`cd client && npm ci`)            | Before review: `build` failed with TS2688 (missing `@types/node`) and `check` flagged every file as unformatted. After declaring the tooling and adding `client/.prettierrc.json`: `check`, 6 tests, and `build` pass                                                                                                                                   |
+| Independent headless Chrome run against a freshly seeded database | 17 checks passed: in-service directory and type filter; end-before-start blocked with no POST; booking shown by resource name; UI double booking shows the 409 alert and keeps the form usable; cancel, rebook, reload; student switch and invalid ID; API stopped shows an error, Refresh recovers after restart; no overflow at 390px; no page errors |
+| Production build served by `vite preview`                         | Directory and My Bookings load with resource names and no page errors                                                                                                                                                                                                                                                                                   |
+
+## Manual test steps
 
 1. Follow the two-terminal setup in README; open http://127.0.0.1:5173.
 2. Select a resource and an unused time interval. Submit and verify it appears in My Bookings.
@@ -72,6 +81,22 @@ No missing-409-handling incident is invented: explicit conflict handling was inc
 6. Stop the API, then use Refresh or change resource filters. Verify an error and usable retry controls; restart the API and retry.
 7. Review the page at a narrow mobile width and navigate controls with Tab.
 
+## Student review
+
+Reviewed by Tim Gong on 2026-10-26.
+
+- [x] Reviewed the agent output against the Lab 5 requirements and confirmed the review findings.
+- [ ] Tested the UI myself: double-booked a resource and saw the 409 alert, cancelled a booking, and checked loading and error states.
+- [ ] Submitted the repository URL to the Lab 5 Canvas assignment.
+
+Follow-ups applied during review:
+
+- `client/package.json` now declares eslint, `@eslint/js`, typescript-eslint, prettier, and `@types/node`, and `client/.prettierrc.json` matches the root config, so `client/` no longer depends on the root `node_modules`.
+- My Bookings labels bookings with resource names instead of IDs; the footer no longer names a lab.
+- `AGENTS.md`: the Lab 5 section is now Frontend (`client/`), with the same guidelines.
+- `README.md`: the frontend moved into the main Setup, Frontend, Architecture, and Review records sections.
+- The three screenshots were retaken against the updated UI (resource names in My Bookings, new footer).
+
 ## Screenshots
 
 [Desktop directory](lab5/desktop.png) · [Real 409 conflict](lab5/conflict.png) · [Mobile bookings](lab5/mobile-bookings.png)
@@ -80,4 +105,4 @@ No missing-409-handling incident is invented: explicit conflict handling was inc
 
 ## Local preview scope
 
-Vite dev and preview proxy `/api` to `127.0.0.1:3000`. This avoids changing backend CORS or API contracts. Static hosting would require its own same-origin API reverse proxy. The lab does not include deployment or authentication. The public repository is the Canvas deliverable.
+Vite dev and preview proxy `/api` to `127.0.0.1:3000`. This avoids changing backend CORS or API contracts. Static hosting would require its own same-origin API reverse proxy. The lab does not include deployment or authentication.

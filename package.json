@@ -2,7 +2,7 @@
   "name": "campushub-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "CampusHub backend \u2014 CS 5500 Labs 1\u20133",
+  "description": "CampusHub backend and API contract for CS 5500",
   "engines": {
     "node": ">=24.21.0",
     "npm": ">=11.19.1"

@@ -68,6 +68,19 @@ Answer: the controller validates and awaits the creation service; the service ow
 
 The agent's first pass ran this query as `rg --ignore-file .cursorignore … src` through `npm run context:files`. Review found that the `src` path argument alone produced the same result, so it did not show the ignore file working, and the script failed on a machine without ripgrep. Ignore files are a search aid, not a security boundary; excluded files remain readable by explicit path.
 
+### Lightweight Codex query
+
+Run on 2026-11-02 with the Codex CLI bundled in the VS Code extension (`codex-cli 0.164.0-alpha.11.1`): a fresh `codex exec -s read-only` session at the repository root, prompt _"Where is reservation creation implemented, and where are its errors mapped? Answer from the source only and do not modify any files."_ `git status` was clean before and after each run. Token counts come from the session's `turn.completed` event and are summed over every model request in the run, including the loaded `AGENTS.md`.
+
+| Run                                                                    | Commands | Files read                                                                                                                                             | Input tokens (cached) | Output tokens |
+| ---------------------------------------------------------------------- | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------: | ------------: |
+| Extension's bundled ripgrep 15.2.0 on `PATH`, as in the IDE            |        3 | `rg` over `src` and `shared/contracts.d.ts`; then the reservation route, controller, and service, `validation.service.ts`, `errorHandler.ts`, `app.ts` |       67,856 (42,880) |         1,078 |
+| Plain shell without ripgrep (`rg` exited 127; fell back to `find src`) |        9 | The same six files plus `src/types/error.ts`                                                                                                           |      104,657 (81,152) |           878 |
+
+Both answers cited only `src/` files and gave the same mapping: `VALIDATION_ERROR` 400, `NOT_FOUND` 404, `DOUBLE_BOOKING` and `INVALID_TRANSITION` 409, Express 4xx errors such as malformed JSON 400 `VALIDATION_ERROR`, and anything else a sanitized 500 `INTERNAL_ERROR`. Neither run read lab records, lockfiles, screenshots, dependencies, or build output, and neither wrote files. One path guessed in the ripgrep run (`src/errors`) did not exist.
+
+Codex limited its own searches to `src` and `shared/contracts.d.ts`, following `AGENTS.md`, so this query gave `.ignore` nothing to hide; the unscoped counts above show what it removes. The two runs on identical code differ by 35% in input tokens, so a single run is too noisy for a before/after token comparison, and none is claimed.
+
 ## Verification
 
 | Check                 | Result                                                                                            |
@@ -114,8 +127,10 @@ The real API handled creation, conflicts, cancellation, and rebooking. Failure/d
 
 ## Student review
 
-- [ ] Reviewed the agent output against the Lab 6 requirements and confirmed the review findings.
-- [ ] Ran a lightweight query in my own agent session and recorded its token usage and the files it read.
+Reviewed by Tim Gong on 2026-11-02.
+
+- [x] Reviewed the agent output against the Lab 6 requirements and confirmed the review findings.
+- [x] Ran a lightweight Codex query and recorded its token usage and the files it read (see Lightweight Codex query).
 - [ ] Submitted the repository URL to the Lab 6 Canvas assignment.
 
 Follow-ups applied during review:

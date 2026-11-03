@@ -2,15 +2,16 @@
 
 ## Scope and context
 
-- Express/Mongoose backend: `src/`; React/Vite client: `client/src/`; declaration-only API types: `shared/contracts.d.ts`.
+- CampusHub is a multi-tenant campus resource system. Express/Mongoose backend: `src/`; React/Vite client: `client/src/`; declaration-only API types: `shared/contracts.d.ts`.
 - `.cursorignore` filters Cursor; its `.ignore` symlink makes ripgrep-based search apply the same rules without flags. They hide dependencies, builds, lockfiles, logs, maps, and historical lab records. Read only relevant source, `docs/openapi.json` for API work, and excluded files only by explicit path when needed. These files are a search aid, not access control.
 - TypeScript application code only, named exports, explicit interfaces and function types; strict checking, no `any`, unsafe casts, ignored type errors, or unhandled promises. Use Prettier and the existing typed ESLint rules.
-- Keep dependencies within the existing manifests (Express/Mongoose backend; React/React DOM/Vite frontend; approved TypeScript/ESLint/Prettier/Node test tooling). New packages need task authorization. Do not add authentication or tenancy beyond the task.
+- Keep dependencies within the existing manifests (Express/Mongoose backend; React/React DOM/Vite frontend; approved TypeScript/ESLint/Prettier/Node test tooling). New packages need task authorization.
 
 ## Boundaries
 
 - Routes map handlers; controllers validate input, await services, and set HTTP status. Express 5 forwards rejected promises to `src/middleware/errorHandler.ts`; do not add repetitive controller try/catch or a second error handler.
-- Services own business logic and ORM calls, without Express/HTTP dependencies. Models define schemas and document interfaces only. Model names are PascalCase. Configuration owns environment reads and connection lifecycle; scripts orchestrate services.
+- Services own business logic and ORM calls, without Express/HTTP dependencies. Models define schemas and document interfaces only. Configuration owns environment reads and connection lifecycle; scripts orchestrate services.
+- Name files `<resource>.routes.ts`, `<resource>.controller.ts`, `<resource>.service.ts`, `<concern>.middleware.ts`, and `<Model>.model.ts` with a PascalCase model; the terminal handler is `errorHandler.ts`.
 - `app.ts` mounts routers under `/api/v1`, not-found middleware, then the terminal error handler. `server.ts` manages startup/shutdown. Connect and initialize indexes before listening. Health is liveness, not database readiness.
 - API DTOs are declared once in `shared/contracts.d.ts`, imported with `import type`. The app configs skip `.d.ts` files, so `shared/tsconfig.json` (run by `npm run typecheck`) checks them. Keep Express route params, domain error classes, and MongoDB document shapes in the backend. Do not import server runtime into the browser.
 - Frontend components render UI with explicit prop interfaces and CSS Modules. API I/O stays in `client/src/api/campushubApi.ts`; reservation state lives in `useBooking`, `useReservations`, and the shared `useReservationMutation` hook. Reuse `useAsyncList` for stale-response protection.
@@ -25,6 +26,7 @@
 - Confirm/cancel return 200 Reservation and are idempotent. CANCELLED is terminal: confirming it returns 409 INVALID_TRANSITION; cancellation never returns 409. Missing IDs return 404 NOT_FOUND.
 - JSON errors use ErrorResponse: 400 VALIDATION_ERROR, 409 DOUBLE_BOOKING/INVALID_TRANSITION, 404 NOT_FOUND, sanitized 500 INTERNAL_ERROR. Never leak internal exceptions or MongoDB fields.
 - Creation and status changes share the resource bookingVersion write inside a transaction. Never replace this with unprotected find-then-create. Requires a replica set; no in-memory fallback. Public IDs remain strings; stored references use ObjectId.
+- Tenant-owned data must carry a tenant ID; scope every read/write to the authenticated tenant, never a request-body tenant ID alone. Do not add authentication or tenancy beyond the task.
 - Seed explicitly/idempotently without overwriting data. Tests may query models but only drop their unique `campushub_test_*` database. Preserve `.env`, production data, and user edits; never commit secrets/builds/dependencies.
 
 ## Verification and delivery

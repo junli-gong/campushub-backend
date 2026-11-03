@@ -1,6 +1,6 @@
 # Lab 6 — Refactoring audit and context optimization
 
-Date: 2026-11-02. Agent-performed implementation and verification; no independent student review or Canvas submission is claimed.
+Date: 2026-11-02. The agent implemented the refactoring and ran the checks under Verification. Review checks, follow-ups, and the student review follow at the end.
 
 ## Audit of Labs 1–5
 
@@ -25,39 +25,48 @@ The executed direction was to preserve API behavior, rename/reuse the existing t
 ## Context optimization artifacts and measurement
 
 - `AGENTS.md`: canonical, pruned project instructions.
-- `CLAUDE.md`: a small entry point referring to AGENTS, avoiding another full copy.
+- `CLAUDE.md`: a small entry point that imports AGENTS with `@AGENTS.md`, avoiding another full copy.
 - `.cursorignore`: dependency/build directories, lockfiles, logs, bundle maps, generated material, and historical lab evidence excluded. Authoritative `docs/openapi.json` remains visible.
-- `npm run context:files`: explicitly applies `.cursorignore` and scopes discovery to `src`, `client/src`, and `shared`.
+- `.ignore`: a symlink to `.cursorignore`. ripgrep reads it automatically, so ripgrep-based agent search applies the same rules with no flags.
 
 | File                 | Before lines | After lines | Before bytes | After bytes |
 | -------------------- | -----------: | ----------: | -----------: | ----------: |
-| AGENTS.md            |           73 |          34 |       10,035 |       4,961 |
+| AGENTS.md            |           73 |          36 |       10,035 |       5,423 |
 | BookingForm.tsx      |          134 |          91 |        4,111 |       2,798 |
 | UserReservations.tsx |          148 |         108 |        4,584 |       3,168 |
 | App.tsx              |          132 |          93 |        4,330 |       3,172 |
 
-The canonical context shrank **50.6% by UTF-8 bytes**, and its whitespace-delimited word count fell from **1,378 to 649**. These are reproducible file-size/context proxies, not a claim about exact model tokens, billing, or total conversation consumption. The additional hook interfaces increase some supporting source size; the improvement is focused context and a single mutation lifecycle, not a claim that every repository line count decreased.
+The canonical context shrank **46.0% by UTF-8 bytes**, and its whitespace-delimited word count fell from **1,378 to 707**. The agent's first pass reached 34 lines, 4,961 bytes, and 649 words; review restored the tenant-scoping and file-naming rules. These are reproducible file-size/context proxies, not a claim about exact model tokens, billing, or total conversation consumption. The additional hook interfaces increase some supporting source size; the improvement is focused context and a single mutation lifecycle, not a claim that every repository line count decreased.
 
-### Lightweight agent query
+### Ignore-file effect
+
+Measured with ripgrep 14.1.1 at the repository root after review. `--no-ignore-dot` turns `.ignore` off, so each pair isolates its effect; `.gitignore` already hides `node_modules/`, `dist/`, and `.env` in both columns.
+
+| Command                     | Without `.ignore` | With `.ignore` |
+| --------------------------- | ----------------: | -------------: |
+| `rg --files .`              |          70 files |       56 files |
+| `rg -l createReservation .` |           9 files |        7 files |
+
+The 14 hidden files are both lockfiles, `VERIFICATION.md`, the Lab 2–6 verification records, the Lab 4 steering log, and the Lab 5–6 screenshots.
 
 Query: **Where is reservation creation implemented, and where are its errors mapped?**
 
 ```sh
-rg -n --ignore-file .cursorignore 'function (createReservation|handleError)' src
+rg -n 'function (createReservation|handleError)' .
 ```
 
-Actual output:
+Actual output with `.ignore`:
 
 ```text
-src/services/reservation.service.ts:28:export async function createReservation(
-src/controllers/reservation.controller.ts:18:export async function createReservationHandler(
-src/middleware/errorHandler.ts:6:export function handleError(
-
+./src/services/reservation.service.ts:28:export async function createReservation(
+./src/controllers/reservation.controller.ts:18:export async function createReservationHandler(
+./src/middleware/errorHandler.ts:6:export function handleError(
+./client/src/api/campushubApi.ts:105:export async function createReservation(
 ```
 
-Answer: the controller validates and awaits the creation service; the service owns the transactional overlap check and insert; the final handleError middleware maps rejected promises to JSON errors. The query returned only these three source locations under `src/`, without loading lockfiles, bundles, screenshots or historical logs. The source manifest also included the shared declarations and client hooks. A separate ignore check confirmed lockfiles/builds/dependencies/maps/historical screenshots are excluded, while `docs/openapi.json` and `shared/contracts.d.ts` remain visible.
+Answer: the controller validates and awaits the creation service; the service owns the transactional overlap check and insert; the final `handleError` middleware maps rejected promises to JSON errors; the client's `createReservation` sends the POST. Without `.ignore`, the same search also matches the sample output quoted in this record.
 
-Ignore files are not security boundaries. No claim is made that Codex automatically honors `.cursorignore`; the recorded commands explicitly load it. Historical reports remain available through deliberate reads.
+The agent's first pass ran this query as `rg --ignore-file .cursorignore … src` through `npm run context:files`. Review found that the `src` path argument alone produced the same result, so it did not show the ignore file working, and the script failed on a machine without ripgrep. Ignore files are a search aid, not a security boundary; excluded files remain readable by explicit path.
 
 ## Verification
 
@@ -91,6 +100,29 @@ The real API handled creation, conflicts, cancellation, and rebooking. Failure/d
 
 [Desktop screenshot](lab6/desktop.png) · [Mobile screenshot](lab6/mobile.png)
 
-## Submission
+## Review checks
 
-Push the refactoring and these artifacts to the existing public repository and submit its URL to Canvas: https://github.com/junli-gong/campushub-backend . Review this audit and the new hook boundaries before submission. Student review is not marked complete by the agent.
+| Check                                                   | Observed result                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Audit figures                                           | Line, byte, and word counts above match `git show` of the Lab 5 commit; its controllers contained no try/catch                                                                                                                                                                                                                                                                                                                                   |
+| Backend `check`, `build`, `npm test`, contract lint     | Passed: 24 tests; the 6 known Redocly warnings; `docs/openapi.json` byte-identical to Lab 5; `dist/server.js` unchanged and no `dist/shared` emitted                                                                                                                                                                                                                                                                                             |
+| Fresh clone of the agent's commit                       | Root and `client/` `npm ci`, `check`, and `build`, plus the 6 client tests, passed                                                                                                                                                                                                                                                                                                                                                               |
+| HTTP responses validated with Ajv against the contract  | 29 of 29 matched their documented status and schema: filters, 201/409/400 creation cases, idempotent confirm and cancel, `INVALID_TRANSITION`, 404s, JSON 404; no `_id`, `__v`, or `bookingVersion`                                                                                                                                                                                                                                              |
+| 25 concurrent overlapping bookings, 3 rounds            | Each round: one 201 and twenty-four 409                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Independent headless Chrome run on the production build | 24 checks passed: directory and type filter; invalid interval sent no POST; two submits in one task sent one POST; student ID and resource buttons locked while saving; UTC payload; resource name in My Bookings; 409 alert with a usable form; cancel 500 kept the booking; two cancel clicks sent one PATCH; rebook and reload; student switch; list failure and Refresh; stale filter response ignored; no overflow at 390px; no page errors |
+| Typo injected into `shared/contracts.d.ts`              | Before review: backend and client `tsc` both passed and the field became `any`. After review: `npm run typecheck` fails with TS2552                                                                                                                                                                                                                                                                                                              |
+
+## Student review
+
+- [ ] Reviewed the agent output against the Lab 6 requirements and confirmed the review findings.
+- [ ] Ran a lightweight query in my own agent session and recorded its token usage and the files it read.
+- [ ] Submitted the repository URL to the Lab 6 Canvas assignment.
+
+Follow-ups applied during review:
+
+- `shared/tsconfig.json` type-checks the shared declarations, which the application configs skipped through `skipLibCheck`; `npm run typecheck` runs it.
+- `.ignore` links to `.cursorignore` so ripgrep-based search applies the rules without flags; `npm run context:files` was removed.
+- `CLAUDE.md` imports `AGENTS.md` instead of linking to it.
+- `AGENTS.md` again states the multi-tenant scoping rule and the file naming convention.
+- The unused shared `User` type and the `CreateReservationDTO` alias were removed; the package description no longer names a lab range.
+- `README.md`: the Lab 6 section became Agent context and Architecture text, and this record is listed under Review records.

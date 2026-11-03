@@ -114,7 +114,7 @@ npm --prefix client run preview
 - `npm run db:down`: stop/remove this project's containers, keeping the data volume.
 - `npm run seed`: insert missing demo resources without resetting data.
 - `npm run dev`: run TypeScript, loading `.env` if present.
-- `npm run check`: strict type checking, architecture-aware ESLint, and Prettier.
+- `npm run check`: strict type checking (including `shared/` declarations), architecture-aware ESLint, and Prettier.
 - `npm test`: HTTP + real MongoDB regression tests, model validation, and architecture-rule probes.
 - `npm run contract:lint`: validate the OpenAPI contract with pinned Redocly CLI.
 - `npm run format`: format repository files.

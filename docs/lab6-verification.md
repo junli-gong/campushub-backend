@@ -131,7 +131,7 @@ Reviewed by Tim Gong on 2026-11-02.
 
 - [x] Reviewed the agent output against the Lab 6 requirements and confirmed the review findings.
 - [x] Ran a lightweight Codex query and recorded its token usage and the files it read (see Lightweight Codex query).
-- [ ] Submitted the repository URL to the Lab 6 Canvas assignment.
+- [x] Submitted the repository URL to the Lab 6 Canvas assignment.
 
 Follow-ups applied during review:
 

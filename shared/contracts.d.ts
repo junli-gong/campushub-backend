@@ -1,12 +1,6 @@
 export type ResourceType = 'ROOM' | 'EQUIPMENT' | 'LAB';
 export type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
 export interface Resource {
   id: string;
   name: string;

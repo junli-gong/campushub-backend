@@ -8,7 +8,6 @@ export type {
   Reservation,
   ResourceType,
 } from '../../../shared/contracts';
-export type CreateReservationDTO = CreateReservationRequest;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -104,7 +103,7 @@ export async function fetchResources(type?: string): Promise<Resource[]> {
   return data;
 }
 export async function createReservation(
-  payload: CreateReservationDTO,
+  payload: CreateReservationRequest,
 ): Promise<Reservation> {
   const data = await request('/reservations', {
     method: 'POST',

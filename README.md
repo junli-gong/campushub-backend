@@ -151,14 +151,7 @@ ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-l
 
 ## Lab 6: Refactoring and source context
 
-`AGENTS.md` is the canonical compact context; `CLAUDE.md` points to it. `.cursorignore` excludes dependency/build output, lockfiles, logs, maps, generated artifacts, and historical lab records from routine agent searches. `docs/openapi.json` and the shared declarations remain discoverable. This is context filtering, not access control.
-
-```sh
-npm run context:files
-rg -n --ignore-file .cursorignore 'function (createReservation|handleError)' src
-```
-
-The first command requires ripgrep (`rg`) and lists only backend/client source plus shared declarations. Use explicit paths when reviewing excluded history. Do not assume every agent automatically applies Cursor ignore rules: the command and AGENTS instructions explicitly apply the file.
+`AGENTS.md` holds the canonical project rules, and `CLAUDE.md` imports it. `.cursorignore` keeps dependencies, build output, lockfiles, logs, source maps, generated artifacts, and historical lab records out of agent search. `.ignore` is a symlink to it, so ripgrep-based tools apply the same rules without extra flags. `docs/openapi.json` and `shared/contracts.d.ts` stay visible. Excluded files remain readable by explicit path; this is a search filter, not access control.
 
 Reservation UI components now delegate state to `useBooking` and `useReservations`, which share the mutation guard/error/cleanup lifecycle in `useReservationMutation`. `useAsyncList` still protects reads from stale responses. `Workspace` owns the existing selection and cross-view refresh wiring. Display behavior and API contracts are unchanged.
 

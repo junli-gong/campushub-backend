@@ -1,3 +1,4 @@
+# Agent search filter. Cursor reads this file; the .ignore symlink applies it to ripgrep-based search.
 # Large generated/dependency material; keep docs/openapi.json authoritative and visible.
 .git/
 **/node_modules/

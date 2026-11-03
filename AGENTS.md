@@ -3,7 +3,7 @@
 ## Scope and context
 
 - Express/Mongoose backend: `src/`; React/Vite client: `client/src/`; declaration-only API types: `shared/contracts.d.ts`.
-- Start with `npm run context:files` (uses `.cursorignore`), then read only relevant source. Use `rg --ignore-file .cursorignore` for searches. Read `docs/openapi.json` for API work; read historical lab records or generated files only when explicitly needed. `.cursorignore` is an index/search aid, not an access-control boundary or a promise that every agent auto-loads it.
+- `.cursorignore` filters Cursor; its `.ignore` symlink makes ripgrep-based search apply the same rules without flags. They hide dependencies, builds, lockfiles, logs, maps, and historical lab records. Read only relevant source, `docs/openapi.json` for API work, and excluded files only by explicit path when needed. These files are a search aid, not access control.
 - TypeScript application code only, named exports, explicit interfaces and function types; strict checking, no `any`, unsafe casts, ignored type errors, or unhandled promises. Use Prettier and the existing typed ESLint rules.
 - Keep dependencies within the existing manifests (Express/Mongoose backend; React/React DOM/Vite frontend; approved TypeScript/ESLint/Prettier/Node test tooling). New packages need task authorization. Do not add authentication or tenancy beyond the task.
 

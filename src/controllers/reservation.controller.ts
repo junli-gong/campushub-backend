@@ -1,3 +1,4 @@
+import type { Reservation } from '../../shared/contracts';
 import type { Request } from 'express';
 import type { Response } from 'express-serve-static-core';
 import {
@@ -10,7 +11,6 @@ import {
   validateReservation,
 } from '../services/validation.service';
 import type {
-  Reservation,
   ReservationParams,
   UserReservationParams,
 } from '../types/reservation';

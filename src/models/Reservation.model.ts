@@ -1,5 +1,5 @@
 import { Schema, model, type Types } from 'mongoose';
-import type { ReservationStatus } from '../types/reservation';
+import type { ReservationStatus } from '../../shared/contracts';
 
 // Persistence uses Date values; HTTP serialization uses ISO 8601 strings.
 export interface ReservationDocument {

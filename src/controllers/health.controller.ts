@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { getHealth } from '../services/health.service';
-import type { HealthResponse } from '../types/health';
+import type { HealthResponse } from '../../shared/contracts';
 
 export function getHealthHandler(
   _request: Request,

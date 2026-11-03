@@ -1,5 +1,5 @@
 import { ResourceModel, type ResourceDocument } from '../models/Resource.model';
-import type { Resource } from '../types/reservation';
+import type { Resource } from '../../shared/contracts';
 
 export function serializeResource(resource: ResourceDocument): Resource {
   return {

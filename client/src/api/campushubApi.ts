@@ -2,12 +2,12 @@ import type {
   Resource,
   Reservation,
   CreateReservationRequest,
-} from '../../../src/types/reservation';
+} from '../../../shared/contracts';
 export type {
   Resource,
   Reservation,
   ResourceType,
-} from '../../../src/types/reservation';
+} from '../../../shared/contracts';
 export type CreateReservationDTO = CreateReservationRequest;
 
 export class ApiError extends Error {

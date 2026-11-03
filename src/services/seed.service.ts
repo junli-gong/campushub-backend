@@ -1,5 +1,5 @@
 import { ResourceModel } from '../models/Resource.model';
-import type { Resource } from '../types/reservation';
+import type { Resource } from '../../shared/contracts';
 import { initializeModels } from './persistence.service';
 
 const seedResources: readonly Resource[] = [

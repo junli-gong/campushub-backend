@@ -1,14 +1,4 @@
-export type ErrorCode =
-  | 'VALIDATION_ERROR'
-  | 'DOUBLE_BOOKING'
-  | 'NOT_FOUND'
-  | 'INTERNAL_ERROR'
-  | 'INVALID_TRANSITION';
-
-export interface ErrorResponse {
-  code: ErrorCode;
-  message: string;
-}
+import type { ErrorCode } from '../../shared/contracts';
 
 export class DomainError extends Error {
   constructor(

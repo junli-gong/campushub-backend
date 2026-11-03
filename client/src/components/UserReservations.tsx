@@ -1,13 +1,6 @@
-import { useCallback, useRef, useState, type ReactElement } from 'react';
-import {
-  cancelReservation,
-  errorMessage,
-  fetchResources,
-  fetchUserReservations,
-  type Reservation,
-  type Resource,
-} from '../api/campushubApi';
-import { useAsyncList } from '../hooks/useAsyncList';
+import type { ReactElement } from 'react';
+import type { Reservation } from '../api/campushubApi';
+import { useReservations } from '../hooks/useReservations';
 import styles from '../App.module.css';
 interface UserReservationsProps {
   userId: string;
@@ -19,50 +12,17 @@ export function UserReservations({
   revision,
   onBusyChange,
 }: UserReservationsProps): ReactElement {
-  const [refresh, setRefresh] = useState(0);
-  const [pendingId, setPendingId] = useState('');
-  const [mutationError, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const pending = useRef(false);
-  const load = useCallback(
-    (): Promise<Reservation[]> => fetchUserReservations(userId),
-    [userId],
-  );
-  const { data, isLoading, error } = useAsyncList(load, revision + refresh);
-  // Names label bookings; a resource taken out of service falls back to its ID.
-  const loadResources = useCallback(
-    (): Promise<Resource[]> => fetchResources(),
-    [],
-  );
-  const resources = useAsyncList(loadResources, 0);
-  const names = new Map(
-    resources.data.map((resource: Resource): [string, string] => [
-      resource.id,
-      resource.name,
-    ]),
-  );
-  const active = data.filter(
-    (booking: Reservation): boolean => booking.status !== 'CANCELLED',
-  );
-  async function cancel(id: string): Promise<void> {
-    if (pending.current) return;
-    pending.current = true;
-    setPendingId(id);
-    setError('');
-    setSuccess('');
-    onBusyChange(true);
-    try {
-      await cancelReservation(id);
-      setSuccess('Reservation cancelled. The time slot is available again.');
-      setRefresh((value: number): number => value + 1);
-    } catch (failure: unknown) {
-      setError(errorMessage(failure));
-    } finally {
-      pending.current = false;
-      setPendingId('');
-      onBusyChange(false);
-    }
-  }
+  const {
+    active,
+    names,
+    isLoading,
+    error,
+    pendingId,
+    mutationError,
+    success,
+    refresh,
+    cancel,
+  } = useReservations({ userId, revision, onBusyChange });
   return (
     <section
       id="my-bookings"
@@ -82,7 +42,7 @@ export function UserReservations({
         <button
           type="button"
           disabled={isLoading || !!pendingId}
-          onClick={(): void => setRefresh(refresh + 1)}
+          onClick={refresh}
         >
           Refresh
         </button>

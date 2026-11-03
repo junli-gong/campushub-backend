@@ -7,7 +7,7 @@ import { seedResourcesIfMissing } from '../services/seed.service';
 import { once } from 'node:events';
 import { test, type TestContext } from 'node:test';
 import express, { type Request, type Response } from 'express';
-import { handleError } from '../middleware/error.middleware';
+import { handleError } from '../middleware/errorHandler';
 import { app } from '../app';
 import { ResourceModel } from '../models/Resource.model';
 import { ReservationModel } from '../models/Reservation.model';

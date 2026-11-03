@@ -1,7 +1,7 @@
 import express, { type Express } from 'express';
 import { connectDatabase } from './config/database';
 import type { Environment } from './config/environment';
-import { handleError } from './middleware/error.middleware';
+import { handleError } from './middleware/errorHandler';
 import { handleNotFound } from './middleware/not-found.middleware';
 import { healthRouter } from './routes/health.routes';
 import { reservationRouter } from './routes/reservation.routes';

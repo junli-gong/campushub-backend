@@ -1,5 +1,5 @@
 import { DomainError } from '../types/error';
-import type { CreateReservationRequest } from '../types/reservation';
+import type { CreateReservationRequest } from '../../shared/contracts';
 
 export function validateIdentifier(value: unknown, name: string): string {
   if (

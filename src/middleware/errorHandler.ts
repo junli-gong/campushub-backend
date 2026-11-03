@@ -1,6 +1,7 @@
 import type { NextFunction, Request } from 'express';
 import type { Response } from 'express-serve-static-core';
-import { DomainError, type ErrorResponse } from '../types/error';
+import { DomainError } from '../types/error';
+import type { ErrorResponse } from '../../shared/contracts';
 
 export function handleError(
   error: unknown,

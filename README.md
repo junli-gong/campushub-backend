@@ -1,6 +1,6 @@
 # CampusHub
 
-CS 5500 Labs 1–5: context boundaries, an OpenAPI contract, a MongoDB-backed reservation API, and a React client.
+CS 5500 Labs 1–6: context boundaries, an OpenAPI contract, a MongoDB-backed reservation API, and a React client.
 
 ## Setup
 
@@ -134,10 +134,12 @@ src/models/Resource.model.ts Resource schema and strict document interface
 src/models/Reservation.model.ts ObjectId reference, Date fields, status enum
 src/scripts/seed.ts          CLI orchestration of the seed service
 src/tests/                   Database and boundary verification
+src/middleware/errorHandler.ts Centralized JSON error mapping
+shared/contracts.d.ts        Declaration-only API types for both applications
 client/                      React + Vite client: API layer, components, hooks
 ```
 
-ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-layer imports from services and models, and `process.env` access outside configuration. Only Express and Mongoose are runtime dependencies. Models have no connections and controllers have no ORM queries.
+ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-layer imports from services and models, and `process.env` access outside configuration. The backend runtime dependencies are Express and Mongoose. Models have no connections and controllers have no ORM queries.
 
 ## Review records
 
@@ -146,3 +148,20 @@ ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-l
 - [docs/lab3-verification.md](docs/lab3-verification.md): Lab 3 checks and the manual layer-isolation audit checklist.
 - [docs/lab4-verification.md](docs/lab4-verification.md) and [docs/lab4-steering-log.md](docs/lab4-steering-log.md): Lab 4 checks, review, and agent steering log.
 - [docs/lab5-verification.md](docs/lab5-verification.md): Lab 5 checks, browser audit, and review.
+
+## Lab 6: Refactoring and source context
+
+`AGENTS.md` is the canonical compact context; `CLAUDE.md` points to it. `.cursorignore` excludes dependency/build output, lockfiles, logs, maps, generated artifacts, and historical lab records from routine agent searches. `docs/openapi.json` and the shared declarations remain discoverable. This is context filtering, not access control.
+
+```sh
+npm run context:files
+rg -n --ignore-file .cursorignore 'function (createReservation|handleError)' src
+```
+
+The first command requires ripgrep (`rg`) and lists only backend/client source plus shared declarations. Use explicit paths when reviewing excluded history. Do not assume every agent automatically applies Cursor ignore rules: the command and AGENTS instructions explicitly apply the file.
+
+Reservation UI components now delegate state to `useBooking` and `useReservations`, which share the mutation guard/error/cleanup lifecycle in `useReservationMutation`. `useAsyncList` still protects reads from stale responses. `Workspace` owns the existing selection and cross-view refresh wiring. Display behavior and API contracts are unchanged.
+
+The existing terminal Express middleware now lives at the lab's requested `src/middleware/errorHandler.ts`. API types live once in `shared/contracts.d.ts`; route params and DomainError stay backend-only. Declaration-only imports preserve the existing `dist/server.js` startup path and do not add browser runtime dependencies.
+
+See [Lab 6 audit and verification](docs/lab6-verification.md) for before/after measurements, the focused query, and regression results.

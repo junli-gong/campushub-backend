@@ -20,7 +20,8 @@
     "contract:lint": "npx --yes @redocly/cli@2.55.0 lint docs/openapi.json",
     "seed": "node --env-file-if-exists=.env --require ts-node/register src/scripts/seed.ts",
     "db:up": "docker compose up -d && docker compose wait mongo-init",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "context:files": "rg --files --ignore-file .cursorignore src client/src shared"
   },
   "dependencies": {
     "express": "^5.2.1",

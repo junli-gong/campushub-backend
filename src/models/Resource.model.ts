@@ -1,5 +1,5 @@
 import { Schema, model, type Types } from 'mongoose';
-import type { ResourceType } from '../types/reservation';
+import type { ResourceType } from '../../shared/contracts';
 
 export interface ResourceDocument {
   _id: Types.ObjectId;

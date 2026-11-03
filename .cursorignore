@@ -1,0 +1,23 @@
+# Large generated/dependency material; keep docs/openapi.json authoritative and visible.
+.git/
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/package-lock.json
+**/pnpm-lock.yaml
+**/yarn.lock
+**/*.log
+**/*.map
+**/*.tsbuildinfo
+**/generated/
+docs/api-build/
+# Historical lab evidence/screenshots: retrieve explicitly only for historical review.
+VERIFICATION.md
+docs/lab*-verification.md
+docs/lab*-steering-log.md
+docs/lab[1-9]/
+.DS_Store
+.env
+.env.*
+!.env-example

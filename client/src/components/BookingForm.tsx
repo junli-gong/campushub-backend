@@ -1,9 +1,6 @@
-import { useRef, useState, type FormEvent, type ReactElement } from 'react';
-import {
-  createReservation,
-  errorMessage,
-  type Resource,
-} from '../api/campushubApi';
+import type { FormEvent, ReactElement } from 'react';
+import type { Resource } from '../api/campushubApi';
+import { useBooking } from '../hooks/useBooking';
 import styles from '../App.module.css';
 interface BookingFormProps {
   resource: Resource | null;
@@ -17,53 +14,16 @@ export function BookingForm({
   onCreated,
   onBusyChange,
 }: BookingFormProps): ReactElement {
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
-  const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const pending = useRef(false);
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    if (pending.current) return;
-    setError('');
-    setSuccess('');
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    if (!resource) {
-      setError('Choose a resource from the directory first.');
-      return;
-    }
-    if (
-      !start ||
-      !end ||
-      !Number.isFinite(startDate.getTime()) ||
-      !Number.isFinite(endDate.getTime()) ||
-      endDate <= startDate
-    ) {
-      setError('Choose valid times with the end later than the start.');
-      return;
-    }
-    pending.current = true;
-    setLoading(true);
-    onBusyChange(true);
-    try {
-      await createReservation({
-        resourceId: resource.id,
-        userId,
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString(),
-      });
-      setSuccess('Reservation created. You can find it in My Bookings.');
-      onCreated();
-    } catch (failure: unknown) {
-      setError(errorMessage(failure));
-    } finally {
-      pending.current = false;
-      setLoading(false);
-      onBusyChange(false);
-    }
-  }
+  const {
+    start,
+    end,
+    changeStart,
+    changeEnd,
+    submit,
+    isLoading,
+    error,
+    success,
+  } = useBooking({ resource, userId, onCreated, onBusyChange });
   return (
     <section className={styles.bookingPanel} aria-labelledby="booking-title">
       <p className={styles.eyebrow}>02 / MAKE IT YOURS</p>
@@ -78,7 +38,8 @@ export function BookingForm({
       </div>
       <form
         onSubmit={(event: FormEvent<HTMLFormElement>): void => {
-          void submit(event);
+          event.preventDefault();
+          void submit();
         }}
         aria-busy={isLoading}
       >
@@ -90,9 +51,7 @@ export function BookingForm({
             required
             value={start}
             onChange={(event): void => {
-              setStart(event.target.value);
-              setError('');
-              setSuccess('');
+              changeStart(event.target.value);
             }}
           />
           <label htmlFor="end-time">End time</label>
@@ -102,9 +61,7 @@ export function BookingForm({
             required
             value={end}
             onChange={(event): void => {
-              setEnd(event.target.value);
-              setError('');
-              setSuccess('');
+              changeEnd(event.target.value);
             }}
           />
           <p className={styles.note}>

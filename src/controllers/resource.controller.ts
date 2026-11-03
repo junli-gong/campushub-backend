@@ -5,7 +5,7 @@ import {
   validateTypeFilter,
   validateAvailabilityFilter,
 } from '../services/validation.service';
-import type { Resource } from '../types/reservation';
+import type { Resource } from '../../shared/contracts';
 
 export async function listResourcesHandler(
   request: Request,

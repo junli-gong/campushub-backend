@@ -9,7 +9,7 @@ import { DomainError } from '../types/error';
 import type {
   CreateReservationRequest,
   Reservation,
-} from '../types/reservation';
+} from '../../shared/contracts';
 
 function serializeReservation(
   reservation: ReservationDocument,

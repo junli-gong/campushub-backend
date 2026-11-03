@@ -95,7 +95,7 @@ Open **http://127.0.0.1:5173**. Vite proxies `/api` to the backend on **127.0.0.
 - **My Bookings** shows PENDING and CONFIRMED bookings, labeled by resource name (a resource taken out of service shows its ID). Cancel a booking to free its slot. The API keeps CANCELLED history; the client filters it out of this active-only view.
 - The default demo student is `user-456`. Enter a different valid student ID and select **Apply** to change the demo session. This is not login or authorization.
 - Loading, empty, validation, API, and network states are visible. Failed reads offer retry/refresh; failed mutations retain the form or booking and enable retry. In-flight mutations prevent duplicate clicks and student switching.
-- API responses are validated before display. Shared interfaces are imported using `import type`; backend runtime code is never bundled into the browser.
+- API responses are validated before display. API types come from `shared/contracts.d.ts` through `import type`; backend runtime code is never bundled into the browser.
 
 ### Frontend checks and production build
 
@@ -129,17 +129,25 @@ src/app.ts                   Express wiring and async database initialization
 src/server.ts                Listener startup and graceful shutdown
 src/routes/                  Route-to-controller mappings only
 src/controllers/             Extract input, call services, set HTTP responses
+src/middleware/              JSON 404 and the central error handler (errorHandler.ts)
 src/services/                Validation, queries, booking transactions, serialization
-src/models/Resource.model.ts Resource schema and strict document interface
-src/models/Reservation.model.ts ObjectId reference, Date fields, status enum
+src/models/                  Mongoose schemas; Reservation.resourceId is an ObjectId
+src/types/                   Backend-only route params and DomainError
 src/scripts/seed.ts          CLI orchestration of the seed service
 src/tests/                   Database and boundary verification
-src/middleware/errorHandler.ts Centralized JSON error mapping
-shared/contracts.d.ts        Declaration-only API types for both applications
-client/                      React + Vite client: API layer, components, hooks
+shared/contracts.d.ts        API types for the backend and client (type-only imports)
+client/src/api/              Fetch wrapper, response guards, user-facing errors
+client/src/hooks/            Reservation state and stale-response protection
+client/src/components/       UI only; Workspace wires selection and refresh
 ```
 
-ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-layer imports from services and models, and `process.env` access outside configuration. The backend runtime dependencies are Express and Mongoose. Models have no connections and controllers have no ORM queries.
+ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-layer imports from services and models, and `process.env` access outside configuration. The backend runtime dependencies are Express and Mongoose. Models have no connections and controllers have no ORM queries or try/catch: Express 5 forwards rejected promises to `errorHandler.ts`.
+
+API types are declared once in `shared/contracts.d.ts`. Because it is declaration-only, it adds nothing to `dist/` or the browser bundle, and `shared/tsconfig.json` type-checks it. In the client, `useBooking` and `useReservations` own reservation state and share the duplicate-submit guard, feedback, and busy cleanup in `useReservationMutation`; `useAsyncList` discards stale read responses.
+
+## Agent context
+
+`AGENTS.md` holds the canonical project rules, and `CLAUDE.md` imports it. `.cursorignore` keeps dependencies, build output, lockfiles, logs, source maps, generated artifacts, and historical lab records out of agent search. `.ignore` is a symlink to it, so ripgrep-based tools apply the same rules without extra flags. `docs/openapi.json` and `shared/contracts.d.ts` stay visible. Excluded files remain readable by explicit path; this is a search filter, not access control.
 
 ## Review records
 
@@ -148,13 +156,4 @@ ESLint rejects model/Mongoose/config imports from controllers and routes, HTTP-l
 - [docs/lab3-verification.md](docs/lab3-verification.md): Lab 3 checks and the manual layer-isolation audit checklist.
 - [docs/lab4-verification.md](docs/lab4-verification.md) and [docs/lab4-steering-log.md](docs/lab4-steering-log.md): Lab 4 checks, review, and agent steering log.
 - [docs/lab5-verification.md](docs/lab5-verification.md): Lab 5 checks, browser audit, and review.
-
-## Lab 6: Refactoring and source context
-
-`AGENTS.md` holds the canonical project rules, and `CLAUDE.md` imports it. `.cursorignore` keeps dependencies, build output, lockfiles, logs, source maps, generated artifacts, and historical lab records out of agent search. `.ignore` is a symlink to it, so ripgrep-based tools apply the same rules without extra flags. `docs/openapi.json` and `shared/contracts.d.ts` stay visible. Excluded files remain readable by explicit path; this is a search filter, not access control.
-
-Reservation UI components now delegate state to `useBooking` and `useReservations`, which share the mutation guard/error/cleanup lifecycle in `useReservationMutation`. `useAsyncList` still protects reads from stale responses. `Workspace` owns the existing selection and cross-view refresh wiring. Display behavior and API contracts are unchanged.
-
-The existing terminal Express middleware now lives at the lab's requested `src/middleware/errorHandler.ts`. API types live once in `shared/contracts.d.ts`; route params and DomainError stay backend-only. Declaration-only imports preserve the existing `dist/server.js` startup path and do not add browser runtime dependencies.
-
-See [Lab 6 audit and verification](docs/lab6-verification.md) for before/after measurements, the focused query, and regression results.
+- [docs/lab6-verification.md](docs/lab6-verification.md): Lab 6 bloat audit, context measurements, regression checks, and review.

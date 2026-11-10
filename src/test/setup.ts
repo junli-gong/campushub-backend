@@ -7,9 +7,10 @@ import { seedResourcesIfMissing } from '../services/seed.service';
 import { ResourceModel } from '../models/Resource.model';
 import { ReservationModel } from '../models/Reservation.model';
 
+// The MongoDB binary version is pinned in package.json (config.mongodbMemoryServer),
+// so the install-time download and test runs use the same binary.
 export function createTestReplicaSet(): Promise<MongoMemoryReplSet> {
   return MongoMemoryReplSet.create({
-    binary: { version: '8.0.16' },
     replSet: { count: 1, storageEngine: 'wiredTiger' },
   });
 }

@@ -143,12 +143,19 @@ test('missing keys, negative times and one-millisecond overlap are enforced at H
     })
     .expect(201);
 });
-test('malformed JSON, bad URL ID, absent reservation and internal failure are JSON errors', async (): Promise<void> => {
-  await request(app)
-    .post('/api/v1/reservations')
-    .set('Content-Type', 'application/json')
-    .send('{')
-    .expect(400);
+test('malformed or non-JSON bodies, bad URL ID, absent reservation and internal failure are JSON errors', async (): Promise<void> => {
+  const bodies: [string, string][] = [
+    ['application/json', '{'],
+    ['text/plain', 'resourceId=res-101'],
+  ];
+  for (const [type, body] of bodies) {
+    const response = await request(app)
+      .post('/api/v1/reservations')
+      .set('Content-Type', type)
+      .send(body)
+      .expect(400);
+    expect(object(response.body)['code']).toBe('VALIDATION_ERROR');
+  }
   await request(app).get('/api/v1/reservations/user/bad%20id').expect(400);
   await request(app).patch('/api/v1/reservations/missing/cancel').expect(404);
   jest

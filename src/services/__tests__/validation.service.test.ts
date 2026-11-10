@@ -7,6 +7,7 @@ import {
   validateAvailabilityFilter,
 } from '../validation.service';
 import { reservationInput as input } from '../../test/fixtures';
+import { DomainError } from '../../types/error';
 
 test.each([
   undefined,
@@ -19,7 +20,7 @@ test.each([
   'a'.repeat(65),
   'bad id',
 ])('rejects invalid identifier %p', (value: unknown): void => {
-  expect((): string => validateIdentifier(value, 'id')).toThrow();
+  expect((): string => validateIdentifier(value, 'id')).toThrow(DomainError);
 });
 test('identifier lengths 1 and 64 and allowed punctuation', (): void => {
   for (const value of ['a', 'A'.repeat(64), 'a-1_2'])
@@ -60,7 +61,7 @@ test('validation rejects all missing keys, extra fields and invalid ranges', ():
         ([name]: [string, string]): boolean => name !== key,
       ),
     );
-    expect((): unknown => validateReservation(incomplete)).toThrow();
+    expect((): unknown => validateReservation(incomplete)).toThrow(DomainError);
   }
   for (const value of [
     undefined,
@@ -75,7 +76,7 @@ test('validation rejects all missing keys, extra fields and invalid ranges', ():
     { ...input, endTime: input.startTime },
     { ...input, endTime: '2027-01-01T09:00:00Z' },
   ])
-    expect((): unknown => validateReservation(value)).toThrow();
+    expect((): unknown => validateReservation(value)).toThrow(DomainError);
   expect(validateReservation(input)).toEqual(input);
 });
 test('filters distinguish absent, unmatched, false and malformed inputs', (): void => {
@@ -85,7 +86,9 @@ test('filters distinguish absent, unmatched, false and malformed inputs', (): vo
   expect(validateAvailabilityFilter('true')).toBe(true);
   expect(validateAvailabilityFilter('false')).toBe(false);
   for (const value of ['', [], true, {}, null])
-    expect((): unknown => validateTypeFilter(value)).toThrow();
+    expect((): unknown => validateTypeFilter(value)).toThrow(DomainError);
   for (const value of ['', '1', 'TRUE', ['false', 'true'], false])
-    expect((): unknown => validateAvailabilityFilter(value)).toThrow();
+    expect((): unknown => validateAvailabilityFilter(value)).toThrow(
+      DomainError,
+    );
 });

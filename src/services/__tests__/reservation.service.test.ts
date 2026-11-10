@@ -78,7 +78,9 @@ describe('reservation services with actual isolated MongoDB transactions', (): v
   test.each(['2027-01-01T09:00:00Z', input.startTime])(
     'rejects negative/zero duration %s and rolls back the resource write',
     async (endTime: string): Promise<void> => {
-      await expect(createReservation({ ...input, endTime })).rejects.toThrow();
+      await expect(createReservation({ ...input, endTime })).rejects.toThrow(
+        'endTime must be later than startTime',
+      );
       expect(await ReservationModel.countDocuments()).toBe(0);
       expect(
         (await ResourceModel.findOne({ id: input.resourceId }).orFail())

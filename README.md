@@ -17,9 +17,9 @@ npm run dev
 
 If you already have `.env`, merge the settings from `.env-example` instead of overwriting your configuration. The first `db:up` downloads the MongoDB image, starts a single-node `rs0` replica set, and waits for initialization. MongoDB is exposed only on `127.0.0.1:27017` and uses a persistent Docker volume. The local database has no authentication; it is a development environment.
 
-Lab 3 requires a real database **and seeded resources before the API tests**. There is no in-memory fallback. The seed command inserts missing `res-101` through `res-104` without overwriting existing resources or deleting reservations. Restarting the API retains bookings. Startup connects and initializes model indexes before opening the HTTP port; a failed connection exits with an error.
+The API requires a real replica set **and seeded resources**; the application has no in-memory fallback. The seed command inserts missing `res-101` through `res-104` without overwriting existing resources or deleting reservations. Restarting the API retains bookings. Startup connects and initializes model indexes before opening the HTTP port; a failed connection exits with an error.
 
-`PORT` defaults to 3000. `MONGODB_URI` is required. `npm test` and `npm run test:regression` now start their own temporary replica sets; no `.env`, Docker, or existing database is required for tests. The regression launcher supplies its generated `TEST_MONGODB_URI` only to the test subprocess. Environment reads are centralized in `src/config/environment.ts`.
+`PORT` defaults to 3000. `MONGODB_URI` is required. Tests start their own temporary replica sets and need no `.env`, Docker, or existing database (see [Testing](#testing)). Environment reads are centralized in `src/config/environment.ts`.
 
 ## Contract and API
 
@@ -108,6 +108,22 @@ npm --prefix client run preview
 
 `client/` declares its own tooling, so these also work after `cd client && npm ci`. Preview the production build at **http://127.0.0.1:4173**, with the API still running on port 3000. The preview proxy is for local verification. A deployed static client must have a same-origin `/api` reverse proxy pointing to the backend; no hosting deployment is included.
 
+## Testing
+
+```sh
+npm test                 # Jest suites, then the Node regression suite
+npm run test:coverage    # Jest with coverage gates; same result as npx jest --coverage
+npm run test:regression  # Node architecture, model, and HTTP suite only
+```
+
+`mongodb-memory-server` starts a disposable single-node replica set with WiredTiger, so the booking transactions run for real; it uses temporary storage rather than keeping every byte in RAM. The MongoDB binary (8.0.16, the same 8.0 series as the Compose image) is pinned in `package.json` under `config.mongodbMemoryServer`. `npm ci`, or the first test run, downloads it once (network access and a supported platform are required), and later runs reuse the cache. Each suite uses a generated `campushub_test_*` database and stops its server on teardown.
+
+- `jest.config.ts` and `src/test/setup.ts`: Jest configuration and the ownership-checked database helper.
+- `src/services/__tests__/`: service and validation cases, including 32 deterministic millisecond interval cases and eight concurrent duplicate booking attempts against real transactions.
+- `src/routes/__tests__/`: Supertest HTTP cases.
+- `src/tests/`: the original Node suite, which `src/test/run-regression.ts` runs against its own temporary replica set.
+- Coverage includes every production file in `src/services/` and `src/controllers/`; each directory must reach 81% statements and branches. `coverage/index.html` is generated and ignored by Git.
+
 ## Commands
 
 - `npm run db:up`: start local MongoDB and initialize/wait for the replica set.
@@ -136,7 +152,9 @@ src/services/                Validation, queries, booking transactions, serializ
 src/models/                  Mongoose schemas; Reservation.resourceId is an ObjectId
 src/types/                   Backend-only route params and DomainError
 src/scripts/seed.ts          CLI orchestration of the seed service
-src/tests/                   Database and boundary verification
+src/tests/                   Node regression suite: database, HTTP, and boundary probes
+src/test/                    Jest database helper, fixtures, and regression launcher
+src/**/__tests__/            Jest service and Supertest route suites
 shared/contracts.d.ts        API types for the backend and client (type-only imports)
 client/src/api/              Fetch wrapper, response guards, user-facing errors
 client/src/hooks/            Reservation state and stale-response protection
@@ -159,24 +177,4 @@ API types are declared once in `shared/contracts.d.ts`. Because it is declaratio
 - [docs/lab4-verification.md](docs/lab4-verification.md) and [docs/lab4-steering-log.md](docs/lab4-steering-log.md): Lab 4 checks, review, and agent steering log.
 - [docs/lab5-verification.md](docs/lab5-verification.md): Lab 5 checks, browser audit, and review.
 - [docs/lab6-verification.md](docs/lab6-verification.md): Lab 6 bloat audit, context measurements, regression checks, and review.
-
-## Lab 7: Adversarial testing and coverage
-
-```sh
-npm ci
-npm test
-npm run test:coverage
-# Equivalent coverage command required by the handout:
-npx jest --coverage
-npm run test:regression
-```
-
-The first test run downloads MongoDB **8.0.16** for your platform (network access and a supported MongoDB platform are required). Subsequent runs reuse its cache. `mongodb-memory-server` manages a real disposable single-node replica set with WiredTiger, enabling the existing transactions. It uses temporary storage rather than promising that every database byte stays in RAM. Tests never connect to your normal application database; each suite has a generated `campushub_test_*` database and teardown stops its server.
-
-- Jest configuration: `jest.config.ts`; setup/ownership-checked cleanup: `src/test/setup.ts`.
-- Service and validation cases: `src/services/__tests__/`; Supertest HTTP cases: `src/routes/__tests__/`.
-- The service suite includes 32 deterministic millisecond interval cases and eight concurrent duplicate booking attempts. The tests retain real transactions instead of mocking the collision check.
-- Coverage collects every production file in `src/services/` and `src/controllers/`, excluding only test files. Each directory independently requires **81%** statements and branches. Generated HTML is available at `coverage/index.html`; generated coverage stays out of Git.
-- [Checked-in coverage report and audit](docs/lab7-verification.md) and [portable coverage summary](docs/lab7/coverage-summary.json) record the completed run.
-
-Application startup and seeding still use your configured real development database, as described above. Only the testing workflow changed in Lab 7.
+- [docs/lab7-verification.md](docs/lab7-verification.md) and [docs/lab7/coverage-summary.json](docs/lab7/coverage-summary.json): Lab 7 edge-case design, coverage report, and review.

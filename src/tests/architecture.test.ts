@@ -36,6 +36,12 @@ void test('ESLint rejects representative cross-layer imports and misplaced envir
       code: "export const bad = process.env['PORT'];",
       rule: 'no-restricted-properties',
     },
+    {
+      // Only src/test/run-regression.ts may forward the environment.
+      filename: 'src/test/setup.ts',
+      code: "export const bad = process.env['MONGODB_URI'];",
+      rule: 'no-restricted-properties',
+    },
   ];
   for (const probe of probes) {
     const results = await eslint.lintText(probe.code, {

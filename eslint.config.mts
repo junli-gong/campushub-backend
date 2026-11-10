@@ -26,6 +26,7 @@ export default tseslint.config(
   },
   {
     files: ['src/controllers/**/*.ts', 'src/routes/**/*.ts'],
+    ignores: ['src/**/__tests__/**'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -43,6 +44,7 @@ export default tseslint.config(
   },
   {
     files: ['src/services/**/*.ts', 'src/models/**/*.ts'],
+    ignores: ['src/**/__tests__/**'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -68,7 +70,7 @@ export default tseslint.config(
   },
   {
     files: ['src/**/*.ts'],
-    ignores: ['src/config/**/*.ts'],
+    ignores: ['src/config/**/*.ts', 'src/test/run-regression.ts'],
     rules: {
       'no-restricted-properties': [
         'error',

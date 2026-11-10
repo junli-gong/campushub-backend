@@ -1,6 +1,6 @@
 # CampusHub
 
-CS 5500 Labs 1–6: context boundaries, an OpenAPI contract, a MongoDB-backed reservation API, and a React client.
+CS 5500 Labs 1–7: context boundaries, an OpenAPI contract, a MongoDB-backed reservation API, and a React client.
 
 ## Setup
 
@@ -19,7 +19,7 @@ If you already have `.env`, merge the settings from `.env-example` instead of ov
 
 Lab 3 requires a real database **and seeded resources before the API tests**. There is no in-memory fallback. The seed command inserts missing `res-101` through `res-104` without overwriting existing resources or deleting reservations. Restarting the API retains bookings. Startup connects and initializes model indexes before opening the HTTP port; a failed connection exits with an error.
 
-`PORT` defaults to 3000. `MONGODB_URI` is required. `TEST_MONGODB_URI` identifies the replica set used for automated tests; each test run overrides the database name with a unique `campushub_test_*` name and deletes only that database. Environment reads are centralized in `src/config/environment.ts`.
+`PORT` defaults to 3000. `MONGODB_URI` is required. `npm test` and `npm run test:regression` now start their own temporary replica sets; no `.env`, Docker, or existing database is required for tests. The regression launcher supplies its generated `TEST_MONGODB_URI` only to the test subprocess. Environment reads are centralized in `src/config/environment.ts`.
 
 ## Contract and API
 
@@ -115,7 +115,9 @@ npm --prefix client run preview
 - `npm run seed`: insert missing demo resources without resetting data.
 - `npm run dev`: run TypeScript, loading `.env` if present.
 - `npm run check`: strict type checking (including `shared/` declarations), architecture-aware ESLint, and Prettier.
-- `npm test`: HTTP + real MongoDB regression tests, model validation, and architecture-rule probes.
+- `npm test`: Jest service and Supertest HTTP tests with an ephemeral MongoDB replica set.
+- `npm run test:coverage`: Jest coverage with >80% statement/branch gates for services and controllers.
+- `npm run test:regression`: original Node HTTP/database/model/architecture tests on another ephemeral replica set.
 - `npm run contract:lint`: validate the OpenAPI contract with pinned Redocly CLI.
 - `npm run format`: format repository files.
 - `npm run build`: compile to ignored `dist/`.
@@ -157,3 +159,24 @@ API types are declared once in `shared/contracts.d.ts`. Because it is declaratio
 - [docs/lab4-verification.md](docs/lab4-verification.md) and [docs/lab4-steering-log.md](docs/lab4-steering-log.md): Lab 4 checks, review, and agent steering log.
 - [docs/lab5-verification.md](docs/lab5-verification.md): Lab 5 checks, browser audit, and review.
 - [docs/lab6-verification.md](docs/lab6-verification.md): Lab 6 bloat audit, context measurements, regression checks, and review.
+
+## Lab 7: Adversarial testing and coverage
+
+```sh
+npm ci
+npm test
+npm run test:coverage
+# Equivalent coverage command required by the handout:
+npx jest --coverage
+npm run test:regression
+```
+
+The first test run downloads MongoDB **8.0.16** for your platform (network access and a supported MongoDB platform are required). Subsequent runs reuse its cache. `mongodb-memory-server` manages a real disposable single-node replica set with WiredTiger, enabling the existing transactions. It uses temporary storage rather than promising that every database byte stays in RAM. Tests never connect to your normal application database; each suite has a generated `campushub_test_*` database and teardown stops its server.
+
+- Jest configuration: `jest.config.ts`; setup/ownership-checked cleanup: `src/test/setup.ts`.
+- Service and validation cases: `src/services/__tests__/`; Supertest HTTP cases: `src/routes/__tests__/`.
+- The service suite includes 32 deterministic millisecond interval cases and eight concurrent duplicate booking attempts. The tests retain real transactions instead of mocking the collision check.
+- Coverage collects every production file in `src/services/` and `src/controllers/`, excluding only test files. Each directory independently requires **81%** statements and branches. Generated HTML is available at `coverage/index.html`; generated coverage stays out of Git.
+- [Checked-in coverage report and audit](docs/lab7-verification.md) and [portable coverage summary](docs/lab7/coverage-summary.json) record the completed run.
+
+Application startup and seeding still use your configured real development database, as described above. Only the testing workflow changed in Lab 7.

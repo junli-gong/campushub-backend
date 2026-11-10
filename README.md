@@ -115,9 +115,9 @@ npm --prefix client run preview
 - `npm run seed`: insert missing demo resources without resetting data.
 - `npm run dev`: run TypeScript, loading `.env` if present.
 - `npm run check`: strict type checking (including `shared/` declarations), architecture-aware ESLint, and Prettier.
-- `npm test`: Jest service and Supertest HTTP tests with an ephemeral MongoDB replica set.
+- `npm test`: Jest service and Supertest HTTP tests, then `npm run test:regression`.
 - `npm run test:coverage`: Jest coverage with >80% statement/branch gates for services and controllers.
-- `npm run test:regression`: original Node HTTP/database/model/architecture tests on another ephemeral replica set.
+- `npm run test:regression`: original Node HTTP/database/model/architecture tests on their own ephemeral replica set.
 - `npm run contract:lint`: validate the OpenAPI contract with pinned Redocly CLI.
 - `npm run format`: format repository files.
 - `npm run build`: compile to ignored `dist/`.

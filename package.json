@@ -16,7 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check",
-    "test": "jest --runInBand",
+    "test": "jest --runInBand && npm run test:regression",
     "contract:lint": "npx --yes @redocly/cli@2.55.0 lint docs/openapi.json",
     "seed": "node --env-file-if-exists=.env --require ts-node/register src/scripts/seed.ts",
     "db:up": "docker compose up -d && docker compose wait mongo-init",

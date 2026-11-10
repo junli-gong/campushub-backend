@@ -31,7 +31,7 @@
 
 ## Verification and delivery
 
-- Backend: `npm run check`, `npm run build`, `npm test`; run `npm run contract:lint` if the contract changes. `npm test` uses Jest and an ephemeral MongoMemoryReplSet; `npm run test:coverage` enforces >80% statements/branches separately for services and controllers. `npm run test:regression` runs the original Node suite on its own ephemeral replica set. Production/local development still uses `npm run db:up`. Seed explicitly and verify health 200 / unknown-route JSON 404.
+- Backend: `npm run check`, `npm run build`, `npm test`; run `npm run contract:lint` if the contract changes. `npm test` runs the Jest suites, then `npm run test:regression` (the Node architecture, model, and HTTP suite), each on its own ephemeral MongoMemoryReplSet; `npm run test:coverage` enforces >80% statements/branches separately for services and controllers. Production/local development still uses `npm run db:up`. Seed explicitly and verify health 200 / unknown-route JSON 404.
 - Frontend: `npm --prefix client run check`, `npm --prefix client test`, `npm --prefix client run build`; browser-check affected reservation workflows. Declare client tools in its own manifest and preserve its Prettier config.
 - Keep architecture probes in sync with ESLint boundaries. Record actual checks and limitations, never fabricate student review or token measurements. Keep commits focused (`type: description`); submit/push as authorized, preserving instructor access.
 

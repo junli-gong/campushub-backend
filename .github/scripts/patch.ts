@@ -31,7 +31,25 @@ export function parseRepair(value: unknown): Repair {
     after.split('\n').length > 20
   )
     throw new Error('Repair exceeds the small-patch limit');
-  return { reason, before, after };
+  const oldLines = before.split('\n');
+  const newLines = after.split('\n');
+  while (
+    oldLines.length > 1 &&
+    newLines.length > 1 &&
+    oldLines[0] === newLines[0]
+  ) {
+    oldLines.shift();
+    newLines.shift();
+  }
+  while (
+    oldLines.length > 1 &&
+    newLines.length > 1 &&
+    oldLines.at(-1) === newLines.at(-1)
+  ) {
+    oldLines.pop();
+    newLines.pop();
+  }
+  return { reason, before: oldLines.join('\n'), after: newLines.join('\n') };
 }
 export function applyRepair(source: string, repair: Repair): string {
   const first = source.indexOf(repair.before);

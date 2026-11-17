@@ -25,3 +25,17 @@ void test('rejects malformed, empty, unchanged and oversized model output', (): 
   ])
     assert.throws((): unknown => parseRepair(value));
 });
+
+void test('removes unchanged context but still requires a unique exact edit', (): void => {
+  const repair = parseRepair({
+    reason: 'boundary',
+    before: 'unchanged\nold\nunchanged',
+    after: 'unchanged\nnew\nunchanged',
+  });
+  assert.equal(
+    applyRepair('  unchanged\n  old\n  unchanged', repair),
+    '  unchanged\n  new\n  unchanged',
+  );
+  assert.throws((): string => applyRepair('old old', repair), /exactly one/);
+  assert.throws((): string => applyRepair('missing', repair), /exactly one/);
+});

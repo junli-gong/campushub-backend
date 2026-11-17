@@ -73,7 +73,7 @@ async function main(): Promise<void> {
   const response = await readFile('artifacts/repair.json', 'utf8');
   const body = `## Automatically generated remediation
 
-The CI test step failed on ${head}. A local qwen2.5-coder:1.5b model analyzed the Jest log, source and diff, then generated this patch. The workflow applied no hard-coded fallback.
+The CI test step failed on ${head}. A local qwen2.5-coder:7b model analyzed the Jest log, source and diff, then generated this patch. The workflow applied no hard-coded fallback.
 
 Workflow and artifacts: https://github.com/${repo}/actions/runs/${runId}
 

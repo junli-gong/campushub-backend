@@ -13,7 +13,7 @@ Verified on November 16, 2026 (America/Los_Angeles).
 
 The failed test exit status is preserved despite capturing output with `tee`. The downstream `auto-fix` job checks both `failure()` and the test-step outcome. It accepts only owner-authored, same-repository reservation-service-only PRs. The orchestrator comes from the trusted base revision; the candidate comes from the exact failed head.
 
-Pinned Ollama runs `qwen2.5-coder:7b` locally on the Actions runner. The prompt includes actual failure output, the service source and the PR diff. The model must return a small exact replacement, applied only if its old text is unique. No hard-coded repair fallback exists. The original checks/build/tests/coverage must pass before publishing. The publishing step alone receives the write token, and the patch PR targets the broken branch. No automatic approval or merge is implemented.
+Pinned Ollama runs `qwen2.5-coder:7b` locally on the Actions runner. The prompt includes actual failure output, the service source and the PR diff. The model must return a small exact replacement, applied only if its old text is unique. No hard-coded repair fallback exists. The original checks/build/tests/coverage must pass before publishing. Only the `auto-fix` job has write permissions, and only its publishing step is given the token (`GH_TOKEN`); the job still runs the PR's own code, which is acceptable only because it is limited to owner-authored same-repository PRs. The patch PR targets the broken branch. No automatic approval or merge is implemented.
 
 GitHub Models was not used because [GitHub documents its retirement](https://docs.github.com/en/github-models). The local model needs no personal API key. GitHub's combined “Allow GitHub Actions to create and approve pull requests” repository setting is necessary for bot-created PRs; the repository owner enabled it for this lab.
 
@@ -63,6 +63,8 @@ After each rejection the prompt or the patch handling changed: a larger model, a
 
 ## Student review
 
-- [ ] Reviewed the workflow and scripts against the Lab 8 requirements and confirmed the review findings.
-- [ ] Inspected the PR #2 diff, confirmed that no test or assertion changed, and recorded the audit in the PR description.
+Reviewed by Tim Gong on 2026-11-16. The human-in-the-loop audit is in the [PR #2 description](https://github.com/junli-gong/campushub-backend/pull/2): the patch was accepted as correct and not merged; it also records that the model's explanation ("double bookings") was wrong and that the final prompt stated the endpoint rule.
+
+- [x] Reviewed the workflow and scripts against the Lab 8 requirements and confirmed the review findings.
+- [x] Inspected the PR #2 diff, confirmed that no test or assertion changed, and recorded the audit in the PR description.
 - [ ] Submitted the repository URL to the Lab 8 Canvas assignment.

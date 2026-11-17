@@ -47,7 +47,7 @@ export async function createReservation(
         resourceId: resource._id,
         status: { $in: ['PENDING', 'CONFIRMED'] },
         startTime: { $lt: new Date(input.endTime) },
-        endTime: { $gte: new Date(input.startTime) },
+        endTime: { $gt: new Date(input.startTime) },
       }).session(session);
       if (conflict) {
         throw new DomainError(

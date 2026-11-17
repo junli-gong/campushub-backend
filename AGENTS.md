@@ -35,3 +35,9 @@
 - Jest fixtures live in `src/test/`; suites in service/route `__tests__` directories may access models for isolated setup. Assert the specific error type or code, not just that something threw. Only the regression launcher may forward process.env to a child process with a generated TEST_MONGODB_URI. Do not loosen production layer rules or mock away transaction semantics.
 - Frontend: `npm --prefix client run check`, `npm --prefix client test`, `npm --prefix client run build`; browser-check affected reservation workflows. Declare client tools in its own manifest and preserve its Prettier config.
 - Keep architecture probes in sync with ESLint boundaries. Record actual checks and limitations, never fabricate student review or token measurements. Keep commits focused (`type: description`); submit/push as authorized, preserving instructor access.
+
+## CI auto-healing
+
+- `.github/workflows/ci.yml` tests pushes/PRs to main. Only actual test-step failure on an owner-authored same-repository PR can trigger the bounded repair runner.
+- The runner is loaded from the trusted base, accepts only small exact replacements in reservation.service.ts, preserves tests/configuration, reruns checks/build/tests/coverage, and opens one repair PR targeting the broken branch. Never auto-merge or fabricate human approval.
+- `.github/scripts/` is TypeScript CI orchestration, separate from application layers; environment reads there are for run metadata. Run `npm run ci:check` after modifying it. Keep credentials out of model context and test execution.

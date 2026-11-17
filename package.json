@@ -27,7 +27,8 @@
     "db:up": "docker compose up -d && docker compose wait mongo-init",
     "db:down": "docker compose down",
     "test:coverage": "jest --runInBand --coverage",
-    "test:regression": "node --require ts-node/register src/test/run-regression.ts"
+    "test:regression": "node --require ts-node/register src/test/run-regression.ts",
+    "ci:check": "tsc -p .github/scripts && node --test .github/scripts/patch.test.ts"
   },
   "dependencies": {
     "express": "^5.2.1",

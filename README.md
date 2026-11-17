@@ -178,3 +178,11 @@ API types are declared once in `shared/contracts.d.ts`. Because it is declaratio
 - [docs/lab5-verification.md](docs/lab5-verification.md): Lab 5 checks, browser audit, and review.
 - [docs/lab6-verification.md](docs/lab6-verification.md): Lab 6 bloat audit, context measurements, regression checks, and review.
 - [docs/lab7-verification.md](docs/lab7-verification.md) and [docs/lab7/coverage-summary.json](docs/lab7/coverage-summary.json): Lab 7 edge-case design, coverage report, and review.
+
+## Lab 8: Auto-healing CI
+
+`.github/workflows/ci.yml` runs lint, types, formatting, CI runner tests, build, application tests and coverage on pushes/PRs to main. Test failures upload `test-results.log` and preserve the failed CI status.
+
+For owner-authored, same-repository PRs changing only `reservation.service.ts`, the conditional auto-fix job runs a local Ollama `qwen2.5-coder:1.5b` model on the failure log, source and diff. No external model API key is needed. The runner loads from the trusted PR base, validates a bounded exact replacement, reruns the unchanged checks/tests/coverage, and only then pushes `fix/auto-heal-<run_id>` and creates a PR against the broken branch. An explicit workflow dispatch independently checks the repair branch because bot-created PRs do not trigger normal PR workflows.
+
+The repository must enable GitHub's combined **Allow GitHub Actions to create and approve pull requests** setting for automatic PR creation. The workflow never approves or merges PRs. Repair evidence is retained as Actions artifacts for 30 days; copy important evidence into the repository for lasting review. Infrastructure or lint failures, forks, and broader changes require manual handling. Run `npm run ci:check` to verify the TypeScript orchestration and patch constraints.

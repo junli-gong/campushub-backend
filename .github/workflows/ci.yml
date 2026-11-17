@@ -1,0 +1,140 @@
+name: CampusHub CI and auto-healing
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      tests-outcome: ${{ steps.tests.outcome }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm run ci:check
+      - run: npm run build
+      - name: Run tests and capture actual exit status
+        id: tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-results.log
+      - name: Coverage gates
+        if: steps.tests.outcome == 'success'
+        run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.tests.outcome != 'skipped'
+        with:
+          name: test-results
+          path: test-results.log
+          retention-days: 30
+      - name: Preserve failed test status
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
+
+  auto-fix:
+    needs: build-test
+    if: >-
+      ${{ failure() && needs.build-test.outputs.tests-outcome == 'failure' &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor == github.repository_owner &&
+          !startsWith(github.head_ref, 'fix/auto-heal-') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+    steps:
+      - name: Load trusted runner from PR base
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+      - name: Checkout exact failing head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: work
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: work/package-lock.json
+      - name: Enforce demonstration scope before running PR code
+        working-directory: work
+        shell: bash
+        run: |
+          test "$(git diff --name-only "$BASE_SHA...$HEAD_SHA")" = "src/services/reservation.service.ts"
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: work/artifacts
+      - run: npm ci
+        working-directory: work
+      - name: Install pinned local AI runner
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 https://github.com/ollama/ollama/releases/download/v0.40.16/ollama-linux-amd64.tar.zst -o "$RUNNER_TEMP/ollama.tar.zst"
+          echo "87bfafb2acbc89b2e6a1be0a9043de6aa75fb450696f86bc426e65fc448f788d  $RUNNER_TEMP/ollama.tar.zst" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/ollama"
+          tar --zstd -xf "$RUNNER_TEMP/ollama.tar.zst" -C "$RUNNER_TEMP/ollama"
+          echo "$RUNNER_TEMP/ollama/bin" >> "$GITHUB_PATH"
+          OLLAMA_HOST=127.0.0.1:11434 "$RUNNER_TEMP/ollama/bin/ollama" serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - run: ollama pull qwen2.5-coder:1.5b
+      - name: Generate and constrain AI patch
+        working-directory: work
+        run: node ../trusted/.github/scripts/auto-heal.ts
+      - name: Verify candidate against unchanged checks and tests
+        working-directory: work
+        shell: bash
+        run: |
+          set -o pipefail
+          { npm run check && npm run build && npm test && npm run test:coverage; } 2>&1 | tee artifacts/repair-verification.log
+          test "$(git diff --name-only)" = "src/services/reservation.service.ts"
+          git diff --check
+      - name: Publish exactly one remediation PR for this run
+        working-directory: work
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node ../trusted/.github/scripts/publish-repair.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: auto-heal-evidence
+          path: work/artifacts
+          retention-days: 30

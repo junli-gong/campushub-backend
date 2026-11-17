@@ -13,7 +13,7 @@ Verified on November 16, 2026 (America/Los_Angeles).
 
 The failed test exit status is preserved despite capturing output with `tee`. The downstream `auto-fix` job checks both `failure()` and the test-step outcome. It accepts only owner-authored, same-repository reservation-service-only PRs. The orchestrator comes from the trusted base revision; the candidate comes from the exact failed head.
 
-Pinned Ollama runs `qwen2.5-coder:1.5b` locally on the Actions runner. The prompt includes actual failure output, the service source and the PR diff. The model must return a small exact replacement, applied only if its old text is unique. No hard-coded repair fallback exists. The original checks/build/tests/coverage must pass before publishing. The publishing step alone receives the write token, and the patch PR targets the broken branch. No automatic approval or merge is implemented.
+Pinned Ollama runs `qwen2.5-coder:7b` locally on the Actions runner. The prompt includes actual failure output, the service source and the PR diff. The model must return a small exact replacement, applied only if its old text is unique. No hard-coded repair fallback exists. The original checks/build/tests/coverage must pass before publishing. The publishing step alone receives the write token, and the patch PR targets the broken branch. No automatic approval or merge is implemented.
 
 GitHub Models was not used because [GitHub documents its retirement](https://docs.github.com/en/github-models). The local model needs no personal API key. GitHub's combined “Allow GitHub Actions to create and approve pull requests” repository setting is necessary for bot-created PRs; enabling that setting requires the owner's explicit approval in this session.
 

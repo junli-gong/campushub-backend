@@ -115,7 +115,7 @@ jobs:
             sleep 2
           done
           exit 1
-      - run: ollama pull qwen2.5-coder:1.5b
+      - run: ollama pull qwen2.5-coder:7b
       - name: Generate and constrain AI patch
         working-directory: work
         run: node ../trusted/.github/scripts/auto-heal.ts

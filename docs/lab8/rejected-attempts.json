@@ -1,0 +1,114 @@
+[
+  {
+    "runUrl": "https://github.com/junli-gong/campushub-backend/actions/runs/44019616848",
+    "outcome": "No-op output rejected before applying.",
+    "publishedPR": false,
+    "responses": [
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "created_at": "2026-11-17T04:49:36.68381772Z",
+        "response": "{\n  \"reason\": \"The issue lies in the `createReservation` function where the `endTime` is not correctly checked against the `startTime` to ensure it's half-open.\",\n  \"before\": \"const conflict = await ReservationModel.exists({\\n    resourceId: resource._id,\\n    status: { $in: ['PENDING', 'CONFIRMED'] },\\n    startTime: { $lt: new Date(input.endTime) },\\n    endTime: { $gte: new Date(input.startTime) },\\n  }).session(session);\",\n  \"after\": \"const conflict = await ReservationModel.exists({\\n    resourceId: resource._id,\\n    status: { $in: ['PENDING', 'CONFIRMED'] },\\n    startTime: { $lt: new Date(input.endTime) },\\n    endTime: { $gte: new Date(input.startTime) },\\n  }).session(session);\"\n}",
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 34414469177,
+        "load_duration": 1343440785,
+        "prompt_eval_count": 2443,
+        "prompt_eval_cached_count": 0,
+        "prompt_eval_duration": 24594724000,
+        "eval_count": 195,
+        "eval_duration": 8461314000
+      }
+    ]
+  },
+  {
+    "runUrl": "https://github.com/junli-gong/campushub-backend/actions/runs/44020007775",
+    "outcome": "Old-side diff text rejected because it did not match current source.",
+    "publishedPR": false,
+    "responses": [
+      {
+        "model": "qwen2.5-coder:7b",
+        "created_at": "2026-11-17T04:56:10.679136055Z",
+        "response": "{\n  \"reason\": \"The overlap check in the createReservation function is incorrectly using $gt instead of $gte for the endTime condition, which causes reservations to be rejected when they should be allowed.\",\n  \"before\": \"endTime: { $gt: new Date(input.startTime) },\",\n  \"after\": \"endTime: { $gte: new Date(input.startTime) },\"\n}",
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 211328494582,
+        "load_duration": 5110389911,
+        "prompt_eval_count": 2475,
+        "prompt_eval_cached_count": 0,
+        "prompt_eval_duration": 187359899000,
+        "eval_count": 78,
+        "eval_duration": 18819417000
+      }
+    ]
+  },
+  {
+    "runUrl": "https://github.com/junli-gong/campushub-backend/actions/runs/44020690373",
+    "outcome": "Candidate changed the inequality direction; unchanged tests rejected it (30 failures).",
+    "publishedPR": false,
+    "responses": [
+      {
+        "model": "qwen2.5-coder:7b",
+        "created_at": "2026-11-17T05:03:08.415565986Z",
+        "response": "{\n  \"reason\": \"The current implementation of the reservation service is incorrectly checking for overlapping reservations using a half-open interval [startTime, endTime). This means that a booking ending at 11:00 and another starting at 11:00 would be considered overlapping, which is incorrect according to the business rule. The business rule allows adjacent bookings, so the endTime should be inclusive to avoid this issue.\",\n  \"before\": \"endTime: { $gte: new Date(input.startTime) },\",\n  \"after\": \"endTime: { $lte: new Date(input.startTime) },\"\n}",
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 238056108170,
+        "load_duration": 5109162232,
+        "prompt_eval_count": 2578,
+        "prompt_eval_cached_count": 0,
+        "prompt_eval_duration": 200973960000,
+        "eval_count": 122,
+        "eval_duration": 31951171000
+      }
+    ]
+  },
+  {
+    "runUrl": "https://github.com/junli-gong/campushub-backend/actions/runs/44021569991",
+    "outcome": "Correct operator change rejected because copied unchanged context lost indentation; no PR published. Patch minimization was added afterward, preserving unique exact matching of actual changed text.",
+    "publishedPR": false,
+    "responses": [
+      {
+        "model": "qwen2.5-coder:7b",
+        "created_at": "2026-11-17T05:08:41.51215015Z",
+        "response": "{\n  \"reason\": \"The current implementation incorrectly allows bookings to overlap at the millisecond boundary, which violates the business rule that reservations must be half-open intervals [startTime, endTime). The fix involves adjusting the MongoDB query to correctly identify overlapping bookings by ensuring that the existing booking's start time is strictly less than the requested booking's end time and the existing booking's end time is strictly greater than the requested booking's start time.\",\n  \"before\": \"startTime: { $lt: new Date(input.endTime) },\\nendTime: { $gte: new Date(input.startTime) },\",\n  \"after\": \"startTime: { $lt: new Date(input.endTime) },\\nendTime: { $gt: new Date(input.startTime) },\"\n}",
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 99997398917,
+        "load_duration": 2831091374,
+        "prompt_eval_count": 2641,
+        "prompt_eval_cached_count": 0,
+        "prompt_eval_duration": 54929932000,
+        "eval_count": 152,
+        "eval_duration": 42203349000
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "created_at": "2026-11-17T05:09:31.872317984Z",
+        "response": "{\n  \"reason\": \"The current implementation incorrectly allows bookings to overlap at the millisecond boundary, which violates the business rule that reservations must be half-open intervals [startTime, endTime). The fix involves adjusting the MongoDB query to correctly identify overlapping bookings by ensuring that the existing booking's start time is strictly less than the requested booking's end time and the existing booking's end time is strictly greater than the requested booking's start time.\",\n  \"before\": \"startTime: { $lt: new Date(input.endTime) },\\nendTime: { $gte: new Date(input.startTime) },\",\n  \"after\": \"startTime: { $lt: new Date(input.endTime) },\\nendTime: { $gt: new Date(input.startTime) },\"\n}",
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 50342734664,
+        "load_duration": 1383156,
+        "prompt_eval_count": 2840,
+        "prompt_eval_cached_count": 2635,
+        "prompt_eval_duration": 5911104000,
+        "eval_count": 152,
+        "eval_duration": 44407108000
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "created_at": "2026-11-17T05:10:23.271077014Z",
+        "response": "{\n  \"reason\": \"The current implementation incorrectly allows bookings to overlap at the millisecond boundary, which violates the business rule that reservations must be half-open intervals [startTime, endTime). The fix involves adjusting the MongoDB query to correctly identify overlapping bookings by ensuring that the existing booking's start time is strictly less than the requested booking's end time and the existing booking's end time is strictly greater than the requested booking's start time.\",\n  \"before\": \"startTime: { $lt: new Date(input.endTime) },\\nendTime: { $gte: new Date(input.startTime) },\",\n  \"after\": \"startTime: { $lt: new Date(input.endTime) },\\nendTime: { $gt: new Date(input.startTime) },\"\n}",
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 51385920671,
+        "load_duration": 1668601,
+        "prompt_eval_count": 3039,
+        "prompt_eval_cached_count": 2834,
+        "prompt_eval_duration": 5981912000,
+        "eval_count": 152,
+        "eval_duration": 45375332000
+      }
+    ]
+  }
+]

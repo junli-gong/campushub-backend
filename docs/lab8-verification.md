@@ -67,4 +67,4 @@ Reviewed by Tim Gong on 2026-11-16. The human-in-the-loop audit is in the [PR #2
 
 - [x] Reviewed the workflow and scripts against the Lab 8 requirements and confirmed the review findings.
 - [x] Inspected the PR #2 diff, confirmed that no test or assertion changed, and recorded the audit in the PR description.
-- [ ] Submitted the repository URL to the Lab 8 Canvas assignment.
+- [x] Submitted the repository URL to the Lab 8 Canvas assignment.

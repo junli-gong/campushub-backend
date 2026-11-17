@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { stripVTControlCharacters } from 'node:util';
 import { applyRepair, parseRepair } from './patch.ts';
 
@@ -40,7 +40,8 @@ PR DIFF (minus lines are OLD, plus lines are CURRENT; never use removed lines as
 ${diff}
 CURRENT SOURCE (${sourcePath}, the ONLY valid source of before text):
 ${source}
-Create a patch for CURRENT SOURCE above. A booking ending at 11:00 and another starting at 11:00 MUST both succeed; an existing booking ending at 11:01 must block a new one starting at 11:00. Check your replacement against both examples. before must exist in CURRENT SOURCE, not only in removed diff lines.`;
+Create a patch for CURRENT SOURCE above. A booking ending at 11:00 and another starting at 11:00 MUST both succeed; an existing booking ending at 11:01 must block a new one starting at 11:00. Check your replacement against both examples. before must exist in CURRENT SOURCE, not only in removed diff lines.
+IMPORTANT: This MongoDB query searches for CONFLICTS, not free slots. A match means reject booking. It must match existing.startTime STRICTLY LESS THAN input.endTime AND existing.endTime STRICTLY GREATER THAN input.startTime. Equality at either endpoint must NOT match. Preserve the direction of both inequalities; remove only incorrect endpoint inclusion.`;
   const model = 'qwen2.5-coder:7b';
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const response = await fetch('http://127.0.0.1:11434/api/generate', {
@@ -63,9 +64,9 @@ Create a patch for CURRENT SOURCE above. A booking ending at 11:00 and another s
         },
         options: {
           temperature: 0,
-          num_ctx: 4096,
+          num_ctx: 8192,
           num_predict: 700,
-          num_thread: 2,
+          num_thread: 4,
         },
       }),
     });
@@ -97,6 +98,26 @@ Create a patch for CURRENT SOURCE above. A booking ending at 11:00 and another s
       continue;
     }
     await writeFile(sourcePath, candidate);
+    const verification = spawnSync('npm', ['test'], {
+      encoding: 'utf8',
+      timeout: 180000,
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    const verificationLog = stripVTControlCharacters(
+      `${verification.stdout ?? ''}\n${verification.stderr ?? ''}`,
+    );
+    await writeFile(
+      `artifacts/candidate-tests-${attempt}.log`,
+      verificationLog,
+    );
+    if (verification.status !== 0) {
+      await writeFile(sourcePath, source);
+      if (attempt === 3)
+        throw new Error('Model candidates failed unchanged tests');
+      console.log(`Rejected model attempt ${attempt}: unchanged tests failed`);
+      prompt += `\nYour candidate ${JSON.stringify(repair)} failed unchanged tests. It was reverted; CURRENT SOURCE above is still the repair target. Diagnose these results and propose a corrected patch:\n${verificationLog.slice(0, 10000)}`;
+      continue;
+    }
     await writeFile(
       'artifacts/repair.json',
       JSON.stringify({ model, sourcePath, ...repair }, null, 2),

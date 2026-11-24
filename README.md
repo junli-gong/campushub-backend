@@ -203,4 +203,4 @@ API types are declared once in `shared/contracts.d.ts`. Because it is declaratio
 - [docs/lab6-verification.md](docs/lab6-verification.md): Lab 6 bloat audit, context measurements, regression checks, and review.
 - [docs/lab7-verification.md](docs/lab7-verification.md) and [docs/lab7/coverage-summary.json](docs/lab7/coverage-summary.json): Lab 7 edge-case design, coverage report, and review.
 - [docs/lab8-verification.md](docs/lab8-verification.md) and [docs/lab8/rejected-attempts.json](docs/lab8/rejected-attempts.json): Lab 8 CI baseline, break-and-fix runs, rejected model output, and review.
-- [Lab 9 verification](docs/lab9-verification.md) records the browser results for both booking scenarios.
+- [docs/lab9-verification.md](docs/lab9-verification.md): Lab 9 browser scenarios, cross-browser results, and review.

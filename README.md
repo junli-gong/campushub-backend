@@ -1,6 +1,6 @@
 # CampusHub
 
-CS 5500 Labs 1–8: context boundaries, an OpenAPI contract, a MongoDB-backed reservation API, a React client, and auto-healing CI.
+CS 5500 Labs 1–9: context boundaries, an OpenAPI contract, a MongoDB-backed reservation API, a React client, auto-healing CI, and browser tests for reservation journeys.
 
 ## Setup
 
@@ -88,7 +88,7 @@ The client in [`client/`](client/) uses React, TypeScript, Vite, native fetch, a
 npm --prefix client run dev
 ```
 
-Open **http://127.0.0.1:5173**. Vite proxies `/api` to the backend on **127.0.0.1:3000**, so no CORS middleware is needed. If you customized the backend port, adjust the proxy target in `client/vite.config.ts` accordingly.
+Open **http://127.0.0.1:5173**. Vite proxies `/api` to the backend on **127.0.0.1:3000**, so no CORS middleware is needed. Set `CAMPUSHUB_API_ORIGIN` when starting Vite to use a different backend port.
 
 - Filter available resources by Study rooms, Equipment, or Labs; choose **Reserve resource**.
 - Select local start and end times, then **Create reservation**. An overlapping booking displays a specific conflict alert and keeps the form usable.
@@ -124,9 +124,24 @@ npm run test:regression  # Node architecture, model, and HTTP suite only
 - `src/tests/`: the original Node suite, which `src/test/run-regression.ts` runs against its own temporary replica set.
 - Coverage includes every production file in `src/services/` and `src/controllers/`; each directory must reach 81% statements and branches. `coverage/index.html` is generated and ignored by Git.
 
+### Browser reservation journeys
+
+Run from the repository root:
+
+```sh
+npm ci
+npm --prefix client ci
+npx playwright install chromium firefox webkit
+npx playwright test
+```
+
+Playwright starts the React dev server at `http://127.0.0.1:5179` and the Express API at `http://127.0.0.1:3109`. Keep both ports free. The API creates and seeds a temporary MongoDB replica set for the run. On Linux, use `npx playwright install --with-deps chromium firefox webkit` on the first install to include system libraries.
+
+The [Gherkin scenarios](e2e/scenarios/reservation.feature) and [Playwright specs](e2e/reservation.spec.ts) cover a successful study-room booking and a second student's attempt to reserve an occupied printer. Use `npx playwright test --ui` to step through a journey.
+
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs lint, types, formatting, CI runner tests, build, application tests and coverage on pushes/PRs to main. Test failures upload `test-results.log` and preserve the failed CI status.
+`.github/workflows/ci.yml` runs lint, types, formatting, CI runner tests, build, application tests and coverage on pushes/PRs to main. Test failures upload `test-results.log` and preserve the failed CI status. A separate job runs both browser journeys in Chromium, Firefox, and WebKit and uploads traces on failure.
 
 For owner-authored, same-repository PRs changing only `reservation.service.ts`, the conditional auto-fix job runs a local Ollama `qwen2.5-coder:7b` model on the failure log, source and diff. No external model API key is needed. The runner loads from the trusted PR base, validates a bounded exact replacement, reruns the unchanged checks/tests/coverage, and only then pushes `fix/auto-heal-<run_id>` and creates a PR against the broken branch. An explicit workflow dispatch independently checks the repair branch because bot-created PRs do not trigger normal PR workflows.
 
@@ -188,3 +203,4 @@ API types are declared once in `shared/contracts.d.ts`. Because it is declaratio
 - [docs/lab6-verification.md](docs/lab6-verification.md): Lab 6 bloat audit, context measurements, regression checks, and review.
 - [docs/lab7-verification.md](docs/lab7-verification.md) and [docs/lab7/coverage-summary.json](docs/lab7/coverage-summary.json): Lab 7 edge-case design, coverage report, and review.
 - [docs/lab8-verification.md](docs/lab8-verification.md) and [docs/lab8/rejected-attempts.json](docs/lab8/rejected-attempts.json): Lab 8 CI baseline, break-and-fix runs, rejected model output, and review.
+- [Lab 9 verification](docs/lab9-verification.md) records the browser results for both booking scenarios.

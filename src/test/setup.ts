@@ -1,3 +1,4 @@
+import type { SpawnOptions } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import * as os from 'node:os';
 import mongoose from 'mongoose';
@@ -9,9 +10,11 @@ import { ReservationModel } from '../models/Reservation.model';
 
 // The MongoDB binary version is pinned in package.json (config.mongodbMemoryServer),
 // so the install-time download and test runs use the same binary.
-export function createTestReplicaSet(): Promise<MongoMemoryReplSet> {
+export function createTestReplicaSet(
+  spawn: Pick<SpawnOptions, 'detached'> = {},
+): Promise<MongoMemoryReplSet> {
   return MongoMemoryReplSet.create({
-    replSet: { count: 1, storageEngine: 'wiredTiger' },
+    replSet: { count: 1, storageEngine: 'wiredTiger', spawn },
   });
 }
 export interface TestDatabase {

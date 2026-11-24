@@ -16,7 +16,7 @@
     "dev": "node --env-file-if-exists=.env --require ts-node/register src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node --env-file-if-exists=.env dist/server.js",
-    "typecheck": "tsc --noEmit && tsc -p shared",
+    "typecheck": "tsc --noEmit && tsc -p shared && tsc -p e2e",
     "lint": "eslint --flag unstable_native_nodejs_ts_config src",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -28,7 +28,8 @@
     "db:down": "docker compose down",
     "test:coverage": "jest --runInBand --coverage",
     "test:regression": "node --require ts-node/register src/test/run-regression.ts",
-    "ci:check": "tsc -p .github/scripts && node --test .github/scripts/patch.test.ts"
+    "ci:check": "tsc -p .github/scripts && node --test .github/scripts/patch.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "express": "^5.2.1",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@jest/globals": "^30.5.2",
+    "@playwright/test": "1.65.1",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.6.2",

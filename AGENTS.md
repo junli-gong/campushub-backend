@@ -5,7 +5,7 @@
 - CampusHub is a multi-tenant campus resource system. Express/Mongoose backend: `src/`; React/Vite client: `client/src/`; declaration-only API types: `shared/contracts.d.ts`.
 - `.cursorignore` filters Cursor; its `.ignore` symlink makes ripgrep-based search apply the same rules without flags. They hide dependencies, builds, lockfiles, logs, maps, and historical lab records. Read only relevant source, `docs/openapi.json` for API work, and excluded files only by explicit path when needed. These files are a search aid, not access control.
 - TypeScript application code only, named exports, explicit interfaces and function types; strict checking, no `any`, unsafe casts, ignored type errors, or unhandled promises. Use Prettier and the existing typed ESLint rules.
-- Keep dependencies within the existing manifests (Express/Mongoose backend; React/React DOM/Vite frontend; TypeScript/ESLint/Prettier tooling; Jest, ts-jest, Supertest, mongodb-memory-server, and their types for backend tests). New packages need task authorization.
+- Keep dependencies within the existing manifests (Express/Mongoose backend; React/React DOM/Vite frontend; TypeScript/ESLint/Prettier tooling; Jest, ts-jest, Supertest, mongodb-memory-server, and their types for backend tests; Playwright Test for browser journeys). New packages need task authorization.
 
 ## Boundaries
 
@@ -34,6 +34,7 @@
 - Backend: `npm run check`, `npm run build`, `npm test`; run `npm run contract:lint` if the contract changes. `npm test` runs the Jest suites, then `npm run test:regression` (the Node architecture, model, and HTTP suite), each on its own ephemeral MongoMemoryReplSet; `npm run test:coverage` enforces >80% statements/branches separately for services and controllers. Local development uses `npm run db:up`. Seed explicitly and verify health 200 / unknown-route JSON 404.
 - Jest fixtures live in `src/test/`; suites in service/route `__tests__` directories may access models for isolated setup. Assert the specific error type or code, not just that something threw. Only the regression launcher may forward process.env to a child process with a generated TEST_MONGODB_URI. Do not loosen production layer rules or mock away transaction semantics.
 - Frontend: `npm --prefix client run check`, `npm --prefix client test`, `npm --prefix client run build`; browser-check affected reservation workflows. Declare client tools in its own manifest and preserve its Prettier config.
+- Browser journeys are specified in `e2e/scenarios/reservation.feature` and exercised in `e2e/reservation.spec.ts`. From the repository root, `npx playwright test` runs the seeded Express API and React client against a fresh replica set.
 - Keep architecture probes in sync with ESLint boundaries. Record actual checks and limitations, never fabricate student review or token measurements. Keep commits focused (`type: description`); submit/push as authorized, preserving instructor access.
 
 ## CI auto-healing

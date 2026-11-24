@@ -22,3 +22,5 @@ docs/lab[1-9]/
 .env
 .env.*
 !.env-example
+/test-results/
+/playwright-report/

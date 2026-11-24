@@ -28,7 +28,9 @@ The [setup and run instructions](../README.md#browser-reservation-journeys) repr
 
 ## Student review
 
-- [ ] Reviewed the scenarios, Playwright configuration, and specs against the Lab 9 requirements and confirmed the review findings.
+Reviewed by Tim Gong on 2026-11-23.
+
+- [x] Reviewed the scenarios, Playwright configuration, and specs against the Lab 9 requirements and confirmed the review findings.
 - [ ] Submitted the repository URL to the Lab 9 Canvas assignment.
 
 Follow-ups applied during review:

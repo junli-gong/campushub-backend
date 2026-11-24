@@ -17,7 +17,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node --env-file-if-exists=.env dist/server.js",
     "typecheck": "tsc --noEmit && tsc -p shared && tsc -p e2e",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config src",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config src e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check",

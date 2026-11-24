@@ -6,7 +6,7 @@ Feature: Reserve a campus resource
     When they filter the resource directory to "Study rooms"
     And they select "Study Room 302" and reserve a free one-hour slot tomorrow
     Then they see "Reservation created. You can find it in My Bookings."
-    And after reopening the page as that student, "My Bookings" shows one "PENDING" booking for "Study Room 302" at the requested time
+    And after reopening the page as that student, "My Bookings" shows one "PENDING" booking for "Study Room 302" at the requested local time
 
   Scenario: A second student tries to book an occupied printer
     Given a student has booked "3D Printer A" for a one-hour slot tomorrow

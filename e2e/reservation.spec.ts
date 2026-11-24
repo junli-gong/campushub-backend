@@ -16,7 +16,7 @@ interface Students {
 }
 
 function tomorrowSlot(hour: number, worker: number): Slot {
-  // The browser uses UTC. Each parallel worker gets a disjoint one-hour window.
+  // Slots are UTC instants. Each parallel worker gets a disjoint one-hour window.
   const start = new Date();
   start.setUTCDate(start.getUTCDate() + 1);
   start.setUTCHours(hour + worker, 0, 0, 0);
@@ -24,6 +24,19 @@ function tomorrowSlot(hour: number, worker: number): Slot {
     startTime: start.toISOString(),
     endTime: new Date(start.getTime() + 3_600_000).toISOString(),
   };
+}
+
+function browserZone(zone: string | undefined): string {
+  if (!zone) throw new Error('Set use.timezoneId in playwright.config.ts');
+  return zone;
+}
+
+// datetime-local inputs take wall-clock time in the browser's zone.
+function localInput(instant: string, timeZone: string): string {
+  return new Date(instant)
+    .toLocaleString('sv-SE', { timeZone })
+    .replace(' ', 'T')
+    .slice(0, 16);
 }
 
 async function history(
@@ -101,10 +114,16 @@ function bookingForm(page: Page): Locator {
   return page.getByRole('region', { name: 'Reserve a moment.' });
 }
 
-async function submitSlot(page: Page, slot: Slot): Promise<Response> {
+async function submitSlot(
+  page: Page,
+  slot: Slot,
+  timeZone: string,
+): Promise<Response> {
   const form = bookingForm(page);
-  await form.getByLabel('Start time').fill(slot.startTime.slice(0, 16));
-  await form.getByLabel('End time').fill(slot.endTime.slice(0, 16));
+  await form
+    .getByLabel('Start time')
+    .fill(localInput(slot.startTime, timeZone));
+  await form.getByLabel('End time').fill(localInput(slot.endTime, timeZone));
   const [response] = await Promise.all([
     page.waitForResponse(
       (res) =>
@@ -120,7 +139,9 @@ test('A student books an available study room', async ({
   page,
   request,
   students,
+  timezoneId,
 }, info) => {
+  const zone = browserZone(timezoneId);
   const slot = tomorrowSlot(10, info.parallelIndex);
   await page.goto('/');
   await switchStudent(page, students.owner);
@@ -135,7 +156,7 @@ test('A student books an available study room', async ({
   await selectResource(page, 'Study rooms', 'Study Room 302');
   await expect(printer).toHaveCount(0);
 
-  expect((await submitSlot(page, slot)).status()).toBe(201);
+  expect((await submitSlot(page, slot, zone)).status()).toBe(201);
   await expect(bookingForm(page).getByRole('status')).toHaveText(
     'Reservation created. You can find it in My Bookings.',
   );
@@ -147,12 +168,13 @@ test('A student books an available study room', async ({
     row.getByRole('heading', { name: 'Study Room 302', exact: true }),
   ).toBeVisible();
   await expect(row.getByText('PENDING', { exact: true })).toBeVisible();
+  // My Bookings renders the stored UTC instants in the browser's zone.
   await expect(row).toContainText(
-    new Date(slot.startTime).toLocaleDateString('en-US', { timeZone: 'UTC' }),
+    new Date(slot.startTime).toLocaleDateString('en-US', { timeZone: zone }),
   );
   for (const instant of [slot.startTime, slot.endTime])
     await expect(row).toContainText(
-      new Date(instant).toLocaleTimeString('en-US', { timeZone: 'UTC' }),
+      new Date(instant).toLocaleTimeString('en-US', { timeZone: zone }),
     );
   expect(await history(request, students.owner)).toEqual([
     expect.objectContaining({
@@ -168,12 +190,14 @@ test('A second student tries to book an occupied printer', async ({
   page,
   request,
   students,
+  timezoneId,
 }, info) => {
+  const zone = browserZone(timezoneId);
   const slot = tomorrowSlot(14, info.parallelIndex);
   await page.goto('/');
   await switchStudent(page, students.owner);
   await selectResource(page, 'Equipment', '3D Printer A');
-  expect((await submitSlot(page, slot)).status()).toBe(201);
+  expect((await submitSlot(page, slot, zone)).status()).toBe(201);
   const original = await history(request, students.owner);
   expect(original).toEqual([
     expect.objectContaining({
@@ -186,7 +210,7 @@ test('A second student tries to book an occupied printer', async ({
 
   await switchStudent(page, students.visitor);
   await selectResource(page, 'Equipment', '3D Printer A');
-  const denied = await submitSlot(page, slot);
+  const denied = await submitSlot(page, slot, zone);
   expect(denied.status()).toBe(409);
   expect(await denied.json()).toMatchObject({ code: 'DOUBLE_BOOKING' });
   await expect(bookingForm(page).getByRole('alert')).toHaveText(

@@ -11,7 +11,9 @@ export default defineConfig({
   forbidOnly: !!process.env['CI'],
   use: {
     baseURL: web.origin,
-    timezoneId: 'UTC',
+    // A non-UTC zone with a half-hour offset and no daylight saving time, so a
+    // missing local-to-UTC conversion changes the booked or displayed instant.
+    timezoneId: 'Asia/Kolkata',
     locale: 'en-US',
     trace: 'retain-on-failure',
   },

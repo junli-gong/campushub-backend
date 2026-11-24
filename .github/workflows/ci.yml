@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
-      options: --shm-size=1g
+      options: --user 1001 --shm-size=1g
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6

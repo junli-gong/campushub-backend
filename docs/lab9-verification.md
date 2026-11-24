@@ -11,4 +11,4 @@ On November 23, 2026, `npx playwright test` passed both scenarios in Chromium, F
 
 Each run starts with seeded resources. Parallel workers use distinct time slots, and teardown cancels bookings for the test's unique students. The browser uses UTC, and persisted timestamps are compared as instants. On macOS, the Firefox project gives the browser its own application data directory under the ignored test output.
 
-The [setup and run instructions](../README.md#browser-reservation-journeys) reproduce the local check. On GitHub, the `Reservation journeys (Chromium, Firefox, WebKit)` job in [CampusHub CI](https://github.com/junli-gong/campushub-backend/actions/workflows/ci.yml) runs the same suite on Ubuntu.
+The [setup and run instructions](../README.md#browser-reservation-journeys) reproduce the local check. On GitHub, the `Reservation journeys (Chromium, Firefox, WebKit)` job in [CampusHub CI](https://github.com/junli-gong/campushub-backend/actions/workflows/ci.yml) runs the same suite in the official Ubuntu Playwright image. Its browser version matches the Playwright Test release in the project lockfile.

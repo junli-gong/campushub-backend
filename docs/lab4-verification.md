@@ -55,7 +55,7 @@ Reviewed by Tim Gong on 2026-10-19.
 - [x] Reviewed the agent output against the Lab 4 business rules (conflict prevention, overlap formula, state management) and confirmed the review findings.
 - [x] Manually ran the README examples for filters, creation, confirmation, cancellation, and rebooking after cancellation.
 - [x] Recorded a steering incident with my own remediation prompt in `docs/lab4-steering-log.md`.
-- [ ] Submitted the repository URL to the Lab 4 Canvas assignment.
+- [x] Submitted the repository URL to the Lab 4 Canvas assignment.
 
 Follow-ups applied during review:
 
